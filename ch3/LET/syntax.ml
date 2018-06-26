@@ -11,6 +11,7 @@ and expression =
   | IfExp of expression * expression * expression * Ploc.t
   | VarExp of string * Ploc.t
   | LetExp of string * expression * expression * Ploc.t
+  | MinusExp of expression * Ploc.t
 
 let rec string_of_expression exp =
   match exp with
@@ -26,9 +27,11 @@ let rec string_of_expression exp =
      "(Var " ^ name ^ ")"
   | LetExp (name, exp1, exp2, loc) ->
      "(Let (Var " ^ name ^ ") " ^ string_of_expression exp1 ^ " " ^ string_of_expression exp2 ^ ")"
+  | MinusExp (exp, loc) ->
+     "(Minus " ^ string_of_expression exp ^ ")"
 
 let rec string_of_tl_list tl_list =
-  match tl_list with  
+  match tl_list with
   | ((ExpTop e) :: tl) ->
      string_of_expression e ^ "\n" ^ string_of_tl_list tl
   | [] -> ""
@@ -36,7 +39,7 @@ let rec string_of_tl_list tl_list =
 let string_of_program program =
   match program with
   | AProgram tl_list -> string_of_tl_list tl_list
-    
+
 let g = Grammar.gcreate (Plexer.gmake ())
 
 let p = Grammar.Entry.create g "program"
@@ -61,9 +64,9 @@ e : [
       | "is_zero"; "("; exp = e; ")" -> IsZeroExp(exp, loc)
       | "if"; exp1 = e; "then"; exp2 = e; "else"; exp3 = e -> IfExp (exp1, exp2, exp3, loc)
       | var = LIDENT -> VarExp (var, loc)
-      | "let"; var = LIDENT; "="; exp1 = e; "in"; exp2 = e -> LetExp (var, exp1, exp2, loc)                
+      | "let"; var = LIDENT; "="; exp1 = e; "in"; exp2 = e -> LetExp (var, exp1, exp2, loc)
+      | "minus"; "("; exp =e ; ")" -> MinusExp (exp, loc)
       ]
 ];
 
 END
-

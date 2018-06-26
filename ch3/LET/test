@@ -8,3 +8,4 @@ let a = 5 in
   if is_zero(a) then 5 else 4;
 let a = -(5, 5) in
   if is_zero(a) then 5 else 4;
+minus(-(minus(5),9));
