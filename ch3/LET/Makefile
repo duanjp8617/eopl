@@ -7,7 +7,7 @@ let : $(OBJS)
 
 syntax.cmi:
 syntax.cmo: syntax.cmi
-main.cmo: syntax.cmi core.cmi
+main.cmo: syntax.cmi 
 core.cmi: syntax.cmi
 core.cmo: syntax.cmi core.cmi
 

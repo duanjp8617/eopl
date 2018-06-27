@@ -9,3 +9,9 @@ let a = 5 in
 let a = -(5, 5) in
   if is_zero(a) then 5 else 4;
 minus(-(minus(5),9));
+emptylist;
+let x = 4
+      in cons(x,
+              cons(cons(-(x,1),
+                        emptylist),
+emptylist));

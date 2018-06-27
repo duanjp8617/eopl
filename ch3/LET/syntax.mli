@@ -12,6 +12,8 @@ and expression =
   | VarExp of string * Ploc.t
   | LetExp of string * expression * expression * Ploc.t
   | MinusExp of expression * Ploc.t
+  | EmptyExp of Ploc.t
+  | ConsExp of expression * expression * Ploc.t
 
 val parse : char Stream.t -> program
-val string_of_program : program -> string
+(* val string_of_program : program -> string *)
