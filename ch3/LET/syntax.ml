@@ -72,6 +72,8 @@ e : [
       | "minus"; "("; exp =e ; ")" -> MinusExp (exp, loc)
       | "emptylist" -> EmptyExp loc
       | "cons"; "("; exp = e; ",";  tl = e; ")" -> ConsExp (exp, tl, loc)
+      | "list"; "("; ")" -> EmptyExp loc
+      | "list"; "("; ls = LIST0 e SEP ","; ")" -> List.fold_right (fun elem accum -> ConsExp (elem, accum, loc)) ls (EmptyExp loc)
       ]
 ];
 END

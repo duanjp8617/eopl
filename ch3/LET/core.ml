@@ -5,9 +5,9 @@ type environment = (string * expval) list
 and expval =
   | NumVal of int
   | BoolVal of bool
-  | ListVal of (int list)
+  | ListVal of (expval list)
 
-let string_of_expval value =
+let rec string_of_expval value =
   match value with
   | NumVal n -> string_of_int n
   | BoolVal b -> string_of_bool b
@@ -15,7 +15,7 @@ let string_of_expval value =
      match l with
      | [] -> "[]"
      | x :: tl ->        
-        "[" ^ (List.fold_left (fun str x -> str ^ "," ^ (string_of_int x)) (string_of_int x)  tl) ^ "]" 
+        "[" ^ (List.fold_left (fun str x -> str ^ "," ^ (string_of_expval x)) (string_of_expval x)  tl) ^ "]" 
 
 let empty_env () = []
 
@@ -64,13 +64,9 @@ let rec eval_exp exp env =
      ListVal []
   | ConsExp (head_exp, tl_list, loc) ->
      let tl_list_val = eval_exp tl_list env in
+     let head_exp_val = eval_exp head_exp env in
      (match tl_list_val with      
-      | ListVal l ->
-         let head_exp_val = eval_exp head_exp env in
-         (match head_exp_val with
-          | BoolVal b -> raise(InterpreterError ("Head element is boolean", loc))
-          | NumVal n -> ListVal (n :: l)
-          | ListVal l1 -> ListVal (l1 @ l))
+      | ListVal l -> ListVal (head_exp_val :: l)     
       | _ -> raise (InterpreterError ("Tail is not a list", loc)))
 
 
