@@ -1,5 +1,5 @@
 open Syntax
-open Core 
+open Core                       
    
 let string_of_loc loc =
   let fp = Ploc.first_pos loc in

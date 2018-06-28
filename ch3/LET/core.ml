@@ -84,7 +84,11 @@ let rec eval_exp exp env =
       | ListVal [] -> BoolVal true
       | ListVal (x :: tl) -> BoolVal false
       | _ -> raise (InterpreterError ("Input to is_null should be a list", loc)))
-
+  | PrintExp (exp, loc) ->
+     print_endline (string_of_expval (eval_exp exp env));
+     NumVal 1
+      
+     
 let eval_top_level (ExpTop e) =
   eval_exp e (empty_env ()) |> string_of_expval |> print_endline
 

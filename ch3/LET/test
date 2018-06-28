@@ -21,3 +21,4 @@ list();
 car list(5,4,3,2,1);
 cdr list(5,4,3,2,1);
 is_null list(5,4,3,2,1);
+print(list(5,4,3,2,1));

@@ -17,6 +17,7 @@ and expression =
   | CarExp of expression * Ploc.t
   | CdrExp of expression * Ploc.t
   | NullExp of expression * Ploc.t
-
+  | PrintExp of expression * Ploc.t
+             
 val parse : char Stream.t -> program
 (* val string_of_program : program -> string *)
