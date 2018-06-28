@@ -14,7 +14,9 @@ and expression =
   | MinusExp of expression * Ploc.t
   | EmptyExp of Ploc.t
   | ConsExp of expression * expression * Ploc.t
-
+  | CarExp of expression * Ploc.t
+  | CdrExp of expression * Ploc.t
+  | NullExp of expression * Ploc.t
 
           
 (* let rec string_of_expression exp =
@@ -74,6 +76,9 @@ e : [
       | "cons"; "("; exp = e; ",";  tl = e; ")" -> ConsExp (exp, tl, loc)
       | "list"; "("; ")" -> EmptyExp loc
       | "list"; "("; ls = LIST0 e SEP ","; ")" -> List.fold_right (fun elem accum -> ConsExp (elem, accum, loc)) ls (EmptyExp loc)
+      | "car"; exp = e -> CarExp (exp, loc)
+      | "cdr"; exp = e -> CdrExp (exp, loc)
+      | "is_null"; exp = e -> NullExp (exp, loc)
       ]
 ];
 END

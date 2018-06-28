@@ -68,7 +68,22 @@ let rec eval_exp exp env =
      (match tl_list_val with      
       | ListVal l -> ListVal (head_exp_val :: l)     
       | _ -> raise (InterpreterError ("Tail is not a list", loc)))
-
+  | CarExp (exp, loc) ->
+     let exp_val = eval_exp exp env in
+     (match exp_val with
+      | ListVal (x :: tl) -> x
+      | _ -> raise (InterpreterError ("Input to car should be a list", loc)))
+  | CdrExp (exp, loc) ->
+     let exp_val = eval_exp exp env in
+     (match exp_val with
+      | ListVal (x :: tl) -> ListVal tl
+      | _ -> raise (InterpreterError ("Input to cdr should be a list", loc)))
+  | NullExp (exp, loc) ->
+     let exp_val = eval_exp exp env in
+     (match exp_val with
+      | ListVal [] -> BoolVal true
+      | ListVal (x :: tl) -> BoolVal false
+      | _ -> raise (InterpreterError ("Input to is_null should be a list", loc)))
 
 let eval_top_level (ExpTop e) =
   eval_exp e (empty_env ()) |> string_of_expval |> print_endline
