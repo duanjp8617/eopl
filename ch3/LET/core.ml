@@ -58,7 +58,7 @@ let rec eval_exp exp env =
      (let new_env = List.fold_right
                       (fun exp cur_env ->
                         (match exp with
-                         | BindExp (v, e, loc) -> extend_env v (eval_exp e cur_env) cur_env
+                         | BindExp (v, e, loc) -> extend_env v (eval_exp e env) cur_env
                          | _ -> raise (InterpreterError ("Only bind expression can appear in let", loc))))
                       ls env
       in
@@ -95,7 +95,20 @@ let rec eval_exp exp env =
   | PrintExp (exp, loc) ->
      print_endline (string_of_expval (eval_exp exp env));
      NumVal 1
-      
+  | UnpackExp (ls, exp1, exp2, loc) ->
+     let exp1_val = eval_exp exp1 env in
+     (match exp1_val with
+      | ListVal l ->
+         if List.length l <> List.length ls
+         then raise (InterpreterError ("Invalid unpack expression", loc))
+         else
+           let new_env =  List.fold_left
+                            (fun cur_env (vari, valu) ->
+                              extend_env vari valu cur_env )
+                            env (List.combine ls l)
+           in
+           eval_exp exp2 new_env
+      | _ -> raise (InterpreterError ("Invalid unpack expression", loc)))
      
 let eval_top_level (ExpTop e) =
   eval_exp e (empty_env ()) |> string_of_expval |> print_endline

@@ -19,6 +19,7 @@ and expression =
   | CdrExp of expression * Ploc.t
   | NullExp of expression * Ploc.t
   | PrintExp of expression * Ploc.t
+  | UnpackExp of (string list) * expression * expression * Ploc.t
              
 val parse : char Stream.t -> program
 (* val string_of_program : program -> string *)

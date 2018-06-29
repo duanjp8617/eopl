@@ -19,7 +19,7 @@ and expression =
   | CdrExp of expression * Ploc.t
   | NullExp of expression * Ploc.t
   | PrintExp of expression * Ploc.t
-
+  | UnpackExp of (string list) * expression * expression * Ploc.t
           
 (* let rec string_of_expression exp =
  *   match exp with
@@ -83,6 +83,7 @@ e : [
       | "cdr"; exp = e -> CdrExp (exp, loc)
       | "is_null"; exp = e -> NullExp (exp, loc)
       | "print"; "("; exp = e; ")" -> PrintExp (exp, loc)
+      | "unpack"; ls = LIST1 LIDENT; "="; exp1 = e; "in"; exp2 = e -> UnpackExp (ls, exp1, exp2, loc)  
       ]
 ];
 END
