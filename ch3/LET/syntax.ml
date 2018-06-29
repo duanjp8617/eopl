@@ -10,7 +10,8 @@ and expression =
   | IsZeroExp of expression * Ploc.t
   | IfExp of expression * expression * expression * Ploc.t
   | VarExp of string * Ploc.t
-  | LetExp of string * expression * expression * Ploc.t
+  | BindExp of string * expression * Ploc.t
+  | LetExp of (expression list) * expression * Ploc.t
   | MinusExp of expression * Ploc.t
   | EmptyExp of Ploc.t
   | ConsExp of expression * expression * Ploc.t
@@ -71,7 +72,8 @@ e : [
       | "is_zero"; "("; exp = e; ")" -> IsZeroExp(exp, loc)
       | "if"; exp1 = e; "then"; exp2 = e; "else"; exp3 = e -> IfExp (exp1, exp2, exp3, loc)
       | var = LIDENT -> VarExp (var, loc)
-      | "let"; var = LIDENT; "="; exp1 = e; "in"; exp2 = e -> LetExp (var, exp1, exp2, loc)
+      | var = LIDENT; "="; exp = e -> BindExp(var, exp, loc)
+      | "let"; ls = LIST1 e; "in"; exp = e -> LetExp (ls, exp, loc)
       | "minus"; "("; exp =e ; ")" -> MinusExp (exp, loc)
       | "emptylist" -> EmptyExp loc
       | "cons"; "("; exp = e; ",";  tl = e; ")" -> ConsExp (exp, tl, loc)

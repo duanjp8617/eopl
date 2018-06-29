@@ -10,7 +10,8 @@ and expression =
   | IsZeroExp of expression * Ploc.t
   | IfExp of expression * expression * expression * Ploc.t
   | VarExp of string * Ploc.t
-  | LetExp of string * expression * expression * Ploc.t
+  | BindExp of string * expression * Ploc.t
+  | LetExp of (expression list) * expression * Ploc.t
   | MinusExp of expression * Ploc.t
   | EmptyExp of Ploc.t
   | ConsExp of expression * expression * Ploc.t

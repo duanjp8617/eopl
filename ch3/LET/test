@@ -22,3 +22,7 @@ car list(5,4,3,2,1);
 cdr list(5,4,3,2,1);
 is_null list(5,4,3,2,1);
 print(list(5,4,3,2,1));
+let x = 30
+      in let x = -(x,1)
+             y = -(x,2)
+         in -(x,y);

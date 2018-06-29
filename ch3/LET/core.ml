@@ -52,9 +52,17 @@ let rec eval_exp exp env =
   | VarExp (str, loc) ->
      (try apply_env str env
       with MissInEnv err_msg -> raise (InterpreterError ("Can not find variable " ^ err_msg ^ " in environment", loc)))
-  | LetExp (str, exp1, exp2, loc) ->
-     (let new_env = extend_env str (eval_exp exp1 env) env in
-      eval_exp exp2 new_env)
+  | BindExp (str, exp, loc) ->
+     raise (InterpreterError ("Bind expression can only appear in let", loc))
+  | LetExp (ls, exp, loc) ->
+     (let new_env = List.fold_right
+                      (fun exp cur_env ->
+                        (match exp with
+                         | BindExp (v, e, loc) -> extend_env v (eval_exp e cur_env) cur_env
+                         | _ -> raise (InterpreterError ("Only bind expression can appear in let", loc))))
+                      ls env
+      in
+     eval_exp exp new_env)
   | MinusExp (exp, loc) ->
      (let exp_val = eval_exp exp env in
       (match exp_val with
