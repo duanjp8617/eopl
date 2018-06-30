@@ -11,7 +11,7 @@ let string_of_loc loc =
   string_of_int ln ^ "-" ^ string_of_int lnl ^ ":" ^ string_of_int (fp - bp + 1) ^ "-" ^ string_of_int (lp - bpl)
 
 let parse_output prog =
-  print_endline (string_of_program prog);
+  print_endline "parse succeed";
   ()
   
 let main () = 

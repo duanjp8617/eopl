@@ -11,6 +11,8 @@ and expression =
   | IfExp of expression * expression * expression * Ploc.t
   | VarExp of string * Ploc.t
   | LetExp of string * expression * expression * Ploc.t
-
+  | ProcExp of string * expression * Ploc.t
+  | ApplyExp of string * expression * Ploc.t
+             
 val parse : char Stream.t -> program
-val string_of_program : program -> string
+
