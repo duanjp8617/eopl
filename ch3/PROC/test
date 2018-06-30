@@ -8,24 +8,3 @@ let a = 5 in
   if is_zero(a) then 5 else 4;
 let a = -(5, 5) in
   if is_zero(a) then 5 else 4;
-minus(-(minus(5),9));
-emptylist;
-let x = 4
-      in cons(x,
-              cons(cons(-(x,1),
-                        emptylist),
-emptylist));
-let x = 4
-      in list(x, -(x,1), -(x,3));
-list();
-car list(5,4,3,2,1);
-cdr list(5,4,3,2,1);
-is_null list(5,4,3,2,1);
-print(list(5,4,3,2,1));
-let x = 30
-      in let x = -(x,1)
-             y = -(x,2)
-         in -(x,y);
-let u = 7
-      in unpack x y = cons(u,cons(3,emptylist))
-in -(x,y);

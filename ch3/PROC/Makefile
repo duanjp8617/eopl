@@ -1,4 +1,4 @@
-OBJS = syntax.cmo core.cmo  main.cmo
+OBJS = syntax.cmo core.cmo main.cmo
 
 .PHONY: clean
 let : $(OBJS)
@@ -7,7 +7,7 @@ let : $(OBJS)
 
 syntax.cmi:
 syntax.cmo: syntax.cmi
-main.cmo: syntax.cmi 
+main.cmo: syntax.cmi core.cmi
 core.cmi: syntax.cmi
 core.cmo: syntax.cmi core.cmi
 
