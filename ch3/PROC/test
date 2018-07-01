@@ -67,3 +67,17 @@ let even_rec = proc (even, odd, x)
 let odd = proc (x) (odd_rec odd_rec even_rec x) in
 (odd 11);
 
+# d is used to record the recursive structure in this program
+# f is put into the  recursive structure, therefore we don't need
+# to pass f around. We only need to pass d around by (d d)
+let makerec = proc (f)
+               let d = proc (x)
+                        proc (z) ((f (x x)) z)
+               in proc (n) ((f (d d)) n)
+in let maketimes4 = proc (f)
+                     proc (x)
+                      if is_zero(x)
+                      then 0
+                      else -((f -(x,1)), -(0,4))
+in let times4 = (makerec maketimes4) in (times4 3);
+
