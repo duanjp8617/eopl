@@ -53,14 +53,14 @@ let rec eval_exp exp env =
       eval_exp exp2 new_env)
   | ProcExp (str, exp, loc) ->
      ProcVal (str, exp, env)
-  | ApplyExp (str, exp, loc) ->
-     (let proc = apply_env str env in
+  | ApplyExp (exp1, exp2, loc) ->
+     (let proc = eval_exp exp1 env in
       match proc with
       | ProcVal (arg_name, proc_body, proc_env) ->
-         (let new_proc_env = extend_env arg_name (eval_exp exp env) proc_env in
+         (let new_proc_env = extend_env arg_name (eval_exp exp2 env) proc_env in
           eval_exp proc_body new_proc_env)
       | _ -> raise (InterpreterError ("proc is not defined", loc)))
-
+     
 let eval_top_level (ExpTop e) =
   eval_exp e (empty_env ()) |> string_of_expval |> print_endline
                                                      

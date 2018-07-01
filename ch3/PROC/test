@@ -13,3 +13,5 @@ let x = 200
        in let x = 100
           in let g = proc (z) -(z,x)
              in -((f 1), (g 1));
+let f = proc (x) proc (y) -(x, -(0,y)) in
+((f 3) 4);
