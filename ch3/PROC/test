@@ -17,3 +17,53 @@ let f = proc (x) proc (y) -(x, -(0,y)) in
 ((f 3) 4);
 let f = proc (x,y,z) -(x, -(y,z)) in
 (f 3 5 6);
+
+let makemult = proc (maker)
+                proc (x)
+                 if is_zero(x)
+                 then 0
+                 else -(((maker maker) -(x,1)), -(0,2))
+in let times4 = proc (x) ((makemult makemult) x)
+   in (times4 3);
+
+let odd_rec = proc (odd)
+               proc (even)
+	        proc (x)
+		 if is_zero(x)
+		 then 0
+		 else (((even even) odd) -(x,1)) in
+let even_rec = proc (even)
+                proc (odd)
+		 proc (x)
+		  if is_zero(x)
+		  then 1
+		  else (((odd odd) even) -(x,1)) in
+let odd = proc (x) (((odd_rec odd_rec) even_rec) x) in
+(odd 10);
+
+let odd_rec = proc (odd)
+               proc (even)
+	        proc (x)
+		 if is_zero(x)
+		 then 0
+		 else (((even even) odd) -(x,1)) in
+let even_rec = proc (even)
+                proc (odd)
+		 proc (x)
+		  if is_zero(x)
+		  then 1
+		  else (((odd odd) even) -(x,1)) in
+let even = proc (x) (((even_rec even_rec) odd_rec) x) in
+(even 10);
+
+let odd_rec = proc (odd, even, x)
+	       if is_zero(x)
+	       then 0
+	       else (even even odd -(x,1)) in
+let even_rec = proc (even, odd, x)
+                if is_zero(x)
+	        then 1
+	        else (odd odd even -(x,1)) in
+let odd = proc (x) (odd_rec odd_rec even_rec x) in
+(odd 11);
+
