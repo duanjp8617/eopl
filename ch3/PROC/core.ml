@@ -5,7 +5,7 @@ type environment = (string * expval) list
 and expval =
   | NumVal of int
   | BoolVal of bool
-  | ProcVal of (string list) * expression * environment
+  | ProcVal of (string list) * expression
   | TraceProcVal of (string list) * expression * environment
              
 let string_of_expval value =
@@ -66,7 +66,7 @@ let rec eval_exp exp env =
      (let new_env = extend_env str (eval_exp exp1 env) env in
       eval_exp exp2 new_env)
   | ProcExp (ls, exp, loc) ->
-     ProcVal (ls, exp, env)
+     ProcVal (ls, exp)
   | TraceProcExp (ls, exp, loc) ->
      TraceProcVal (ls, exp, env)
   | ApplyExp (exp1, exp_ls, loc) ->
@@ -81,12 +81,12 @@ let rec eval_exp exp env =
                              proc_env arg_exp_ls in
         let res = eval_exp proc_body new_proc_env in
         (print_proc "exit" (find_proc_name exp1 env) arg_names; res)
-     | ProcVal (arg_names, proc_body, proc_env) ->
+     | ProcVal (arg_names, proc_body) ->
         let arg_exp_ls = List.combine arg_names exp_ls in
         let new_proc_env = List.fold_left
                              (fun cur_env (arg_name, arg_exp) ->
                                extend_env arg_name (eval_exp arg_exp env) cur_env)
-                             proc_env arg_exp_ls in
+                             env arg_exp_ls in
         eval_exp proc_body new_proc_env 
      | _ -> raise (InterpreterError ("proc is not defined", loc))
      

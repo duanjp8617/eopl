@@ -89,3 +89,16 @@ in let maketimes4 = traceproc (f)
                       then 0
                       else -((f -(x,1)), -(0,4))
 in let times4 = (makerec maketimes4) in (times4 3);
+
+
+let odd_rec = traceproc (odd, even, x)
+	       if is_zero(x)
+	       then 0
+	       else (even even odd -(x,1)) in
+let even_rec = traceproc (even, odd, x)
+                if is_zero(x)
+	        then 1
+	        else (odd odd even -(x,1)) in
+let odd = traceproc (x) (odd_rec odd_rec even_rec x) in
+(odd 11);
+
