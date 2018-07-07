@@ -13,7 +13,8 @@ and expression =
   | LetExp of string * expression * expression * Ploc.t
   | ProcExp of string * expression * Ploc.t
   | ApplyExp of string * expression * Ploc.t
-  | LetRecExp of string * string * expression * expression * Ploc.t
+  | ProcDefExp of string * string * expression * Ploc.t
+  | LetRecExp of (expression list) * expression * Ploc.t
                
 val parse : char Stream.t -> program
 

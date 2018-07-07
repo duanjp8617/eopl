@@ -3,7 +3,7 @@ open Syntax
 type environment =
   | EmptyEnv
   | ExtendEnv of string * expval * environment
-  | ExtendEnvRec of string * string * expression * environment
+  | ExtendEnvRec of (expression list) * environment
 
 and expval =
   | NumVal of int
@@ -20,10 +20,19 @@ let empty_env () = EmptyEnv
 
 let extend_env variable value env = ExtendEnv (variable, value, env)
 
-let extend_env_rec p_name v_name p_body env = ExtendEnvRec (p_name, v_name, p_body, env)
+let extend_env_rec exp_ls env = ExtendEnvRec (exp_ls, env)
                                   
 exception MissInEnv of string
-                                  
+
+let rec get_proc variable exp_ls =
+  match exp_ls with
+  | (ProcDefExp (p_name, v_name, p_body, loc) :: ls) ->
+     if p_name = variable
+     then Some (v_name, p_body)
+     else get_proc variable ls
+  | _ :: ls -> raise (MissInEnv variable)
+  | [] -> None
+                     
 let rec apply_env variable env =
   match env with
   | EmptyEnv -> raise (MissInEnv variable)
@@ -31,10 +40,10 @@ let rec apply_env variable env =
      (if v_name = variable
       then v_value
       else apply_env variable cur_env)
-  | ExtendEnvRec (p_name, v_name, p_body, p_env) ->
-     (if p_name = variable
-      then ProcVal (v_name, p_body, env)
-      else apply_env variable p_env)
+  | ExtendEnvRec (exp_ls, p_env) ->
+     match get_proc variable exp_ls with
+     | Some (v_name, p_body) -> ProcVal (v_name, p_body, env)
+     | None -> apply_env variable p_env
 
 exception InterpreterError of string * Ploc.t
                             
@@ -72,8 +81,9 @@ let rec eval_exp exp env =
          (let new_proc_env = extend_env arg_name (eval_exp exp env) proc_env in
           eval_exp proc_body new_proc_env)
       | _ -> raise (InterpreterError ("proc is not defined", loc)))
-  | LetRecExp (p_name, v_name, p_body, exp, loc) ->
-     (let new_env = extend_env_rec p_name v_name p_body env in
+  | ProcDefExp (_, _, _, loc) -> raise (InterpreterError ("we don't evaluate procedure definition", loc))
+  | LetRecExp (ls, exp, loc) ->
+     (let new_env = extend_env_rec ls env in
       eval_exp exp new_env)
 let eval_top_level (ExpTop e) =
   eval_exp e (empty_env ()) |> string_of_expval |> print_endline
