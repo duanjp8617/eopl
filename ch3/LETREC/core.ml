@@ -8,7 +8,7 @@ type environment =
 and expval =
   | NumVal of int
   | BoolVal of bool
-  | ProcVal of string * expression * environment
+  | ProcVal of string * expression
 
 let string_of_expval value =
   match value with
@@ -42,7 +42,7 @@ let rec apply_env variable env =
       else apply_env variable cur_env)
   | ExtendEnvRec (exp_ls, p_env) ->
      match get_proc variable exp_ls with
-     | Some (v_name, p_body) -> ProcVal (v_name, p_body, env)
+     | Some (v_name, p_body) -> ProcVal (v_name, p_body)
      | None -> apply_env variable p_env
 
 exception InterpreterError of string * Ploc.t
@@ -73,18 +73,19 @@ let rec eval_exp exp env =
      (let new_env = extend_env str (eval_exp exp1 env) env in
       eval_exp exp2 new_env)
   | ProcExp (str, exp, loc) ->
-     ProcVal (str, exp, env)
+     ProcVal (str, exp)
   | ApplyExp (str, exp, loc) ->
      (let proc = apply_env str env in
       match proc with
-      | ProcVal (arg_name, proc_body, proc_env) ->
-         (let new_proc_env = extend_env arg_name (eval_exp exp env) proc_env in
+      | ProcVal (arg_name, proc_body) ->
+         (let new_proc_env = extend_env arg_name (eval_exp exp env) env in
           eval_exp proc_body new_proc_env)
       | _ -> raise (InterpreterError ("proc is not defined", loc)))
   | ProcDefExp (_, _, _, loc) -> raise (InterpreterError ("we don't evaluate procedure definition", loc))
   | LetRecExp (ls, exp, loc) ->
      (let new_env = extend_env_rec ls env in
       eval_exp exp new_env)
+    
 let eval_top_level (ExpTop e) =
   eval_exp e (empty_env ()) |> string_of_expval |> print_endline
                                                      
