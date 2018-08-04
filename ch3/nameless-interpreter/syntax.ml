@@ -13,6 +13,7 @@ and expression =
   | LetExp of string * expression * expression * Ploc.t
   | ProcExp of string * expression * Ploc.t
   | ApplyExp of expression * expression * Ploc.t
+  | LetRecExp of string * string * expression * expression * Ploc.t
     
 let g = Grammar.gcreate (Plexer.gmake ())
 
@@ -41,6 +42,7 @@ e : [
       | "proc"; "("; var = LIDENT; ")"; exp = e  -> ProcExp (var, exp, loc)
       | "("; exp1 = e; exp2 = e; ")" -> ApplyExp (exp1, exp2, loc)
       | "let"; var = LIDENT; "="; exp1 = e; "in"; exp2 = e -> LetExp (var, exp1, exp2, loc)
+      | "letrec"; var1 = LIDENT; "("; var2 = LIDENT; ")"; "="; exp1 = e; "in"; exp2 = e -> LetRecExp (var1, var2, exp1, exp2, loc) 
       ]
 ];
 

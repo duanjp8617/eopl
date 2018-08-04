@@ -6,7 +6,7 @@ type nl_environment = expval list
 and expval =
   | NumVal of int
   | BoolVal of bool
-  | ProcVal of nl_expression * nl_environment
+  | ProcVal of nl_expression * (nl_environment ref)
 
 let string_of_expval value =
   match value with
@@ -56,14 +56,20 @@ let rec eval_nl_exp exp env =
      (let new_env = extend_nl_env (eval_nl_exp exp1 env) env in
       eval_nl_exp exp2 new_env)
   | NlProcExp (exp, loc) ->
-     ProcVal (exp, env)
+     ProcVal (exp, ref env)
   | NlApplyExp (exp1, exp2, loc) ->
      (let proc = eval_nl_exp exp1 env in
       match proc with
-      | ProcVal (proc_body, proc_env) ->
-         (let new_proc_env = extend_nl_env (eval_nl_exp exp2 env) proc_env in
+      | ProcVal (proc_body, proc_env_ref) ->
+         (let new_proc_env = extend_nl_env (eval_nl_exp exp2 env) !proc_env_ref in
           eval_nl_exp proc_body new_proc_env)
       | _ -> raise (InterpreterError ("proc is not defined", loc)))
+  | NlLetRecExp (body, exp, loc) ->
+     (let ienv = ref [] in
+      let rproc = ProcVal(body, ienv) in
+      let renv = extend_nl_env rproc env in
+      (ienv := renv);
+      eval_nl_exp exp renv) 
 
 let eval_top_level (ExpTop e) =
   eval_nl_exp (translate_of e (empty_env ())) (empty_nl_env ())|> string_of_expval |> print_endline

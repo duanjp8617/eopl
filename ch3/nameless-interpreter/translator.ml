@@ -25,7 +25,8 @@ type nl_expression =
   | NlLetExp of nl_expression * nl_expression * Ploc.t
   | NlProcExp of nl_expression * Ploc.t
   | NlApplyExp of nl_expression * nl_expression * Ploc.t
-
+  | NlLetRecExp of nl_expression * nl_expression * Ploc.t
+                
 let rec translate_of exp env =
   match exp with
   | ConstExp (num, loc) ->
@@ -44,3 +45,6 @@ let rec translate_of exp env =
      NlProcExp ((translate_of exp (extend_env str env)), loc)
   | ApplyExp (exp1, exp2, loc) ->
      NlApplyExp ((translate_of exp1 env), (translate_of exp2 env), loc)
+  | LetRecExp (var1, var2, exp1, exp2, loc) ->
+     NlLetRecExp ( (translate_of exp1 (extend_env var2 (extend_env var1 env))),
+                    (translate_of exp2 (extend_env var1 env)), loc)
