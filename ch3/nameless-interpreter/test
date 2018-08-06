@@ -17,4 +17,6 @@ let x = 200
 letrec double(x)
 = if is_zero(x) then 0 else -((double -(x,1)), -(0,2))
 in (double 77);
-	     
+
+let f = proc(x,y) -(x,y) in
+(f 5 6);

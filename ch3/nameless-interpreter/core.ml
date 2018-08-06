@@ -62,11 +62,11 @@ let rec eval_nl_exp exp env =
       eval_nl_exp exp2 new_env)
   | NlProcExp (exp, loc) ->
      ProcVal (exp, env)
-  | NlApplyExp (exp1, exp2, loc) ->
+  | NlApplyExp (exp1, exp_list, loc) ->
      (let proc = eval_nl_exp exp1 env in
       match proc with
       | ProcVal (proc_body, proc_env) ->
-         (let new_proc_env = extend_nl_env (eval_nl_exp exp2 env) proc_env in
+         (let new_proc_env = List.append (List.map (fun nl_exp -> eval_nl_exp nl_exp env) exp_list) proc_env in
           eval_nl_exp proc_body new_proc_env)
       | _ -> raise (InterpreterError ("proc is not defined", loc)))
   | NlLetRecExp (body, exp, loc) ->

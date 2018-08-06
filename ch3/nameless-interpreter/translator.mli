@@ -10,7 +10,7 @@ type nl_expression =
   | NlVarExp of int * Ploc.t
   | NlLetExp of nl_expression * nl_expression * Ploc.t
   | NlProcExp of nl_expression * Ploc.t
-  | NlApplyExp of nl_expression * nl_expression * Ploc.t
+  | NlApplyExp of nl_expression * (nl_expression list) * Ploc.t
   | NlLetRecExp of nl_expression * nl_expression * Ploc.t
                 
 val empty_env : unit -> string list
