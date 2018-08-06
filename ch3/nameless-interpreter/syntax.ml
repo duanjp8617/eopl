@@ -11,9 +11,9 @@ and expression =
   | IfExp of expression * expression * expression * Ploc.t
   | VarExp of string * Ploc.t
   | LetExp of string * expression * expression * Ploc.t
-  | ProcExp of string * expression * Ploc.t
-  | ApplyExp of expression * expression * Ploc.t
-  | LetRecExp of string * string * expression * expression * Ploc.t
+  | ProcExp of (string list) * expression * Ploc.t
+  | ApplyExp of expression * (expression list) * Ploc.t
+  | LetRecExp of string * (string list) * expression * expression * Ploc.t
     
 let g = Grammar.gcreate (Plexer.gmake ())
 
@@ -39,10 +39,10 @@ e : [
       | "is_zero"; "("; exp = e; ")" -> IsZeroExp(exp, loc)
       | "if"; exp1 = e; "then"; exp2 = e; "else"; exp3 = e -> IfExp (exp1, exp2, exp3, loc)
       | var = LIDENT -> VarExp (var, loc)
-      | "proc"; "("; var = LIDENT; ")"; exp = e  -> ProcExp (var, exp, loc)
-      | "("; exp1 = e; exp2 = e; ")" -> ApplyExp (exp1, exp2, loc)
+      | "proc"; "("; ls = LIST1 LIDENT SEP ","; ")"; exp = e  -> ProcExp (ls, exp, loc)
+      | "("; exp1 = e; exp_ls = LIST1 e; ")" -> ApplyExp (exp1, exp_ls, loc)
       | "let"; var = LIDENT; "="; exp1 = e; "in"; exp2 = e -> LetExp (var, exp1, exp2, loc)
-      | "letrec"; var1 = LIDENT; "("; var2 = LIDENT; ")"; "="; exp1 = e; "in"; exp2 = e -> LetRecExp (var1, var2, exp1, exp2, loc) 
+      | "letrec"; var1 = LIDENT; "("; ls = LIST1 LIDENT SEP ","; ")"; "="; exp1 = e; "in"; exp2 = e -> LetRecExp (var1, ls, exp1, exp2, loc) 
       ]
 ];
 
