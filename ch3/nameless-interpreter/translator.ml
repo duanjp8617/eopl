@@ -47,4 +47,4 @@ let rec translate_of exp env =
      NlApplyExp ((translate_of exp1 env), List.map (fun exp -> translate_of exp env) exp_ls, loc)
   | LetRecExp (var1, str_list, exp1, exp2, loc) ->
      NlLetRecExp ( (translate_of exp1 (List.append str_list (extend_env var1 env))),
-                    (translate_of exp2 (extend_env var1 env)), loc)
+                   (translate_of exp2 (extend_env var1 env)), loc)
