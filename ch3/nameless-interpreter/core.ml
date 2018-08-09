@@ -34,6 +34,16 @@ let rec apply_nl_env num env =
   | [] -> raise (MissInEnv num)
 
 exception InterpreterError of string * Ploc.t
+
+let retrieve_new_env env pos_list =
+  let rec do_retrieve_one env pos =
+    match env with
+    | hd :: tl ->
+       if pos <> 0
+       then do_retrieve_one tl (pos-1)
+       else hd
+    | [] -> raise (MissInEnv 1024)
+  in List.map (fun pos -> do_retrieve_one env pos) pos_list
                             
 let rec eval_nl_exp exp env =
   match exp with
@@ -60,7 +70,7 @@ let rec eval_nl_exp exp env =
   | NlLetExp (exp1, exp2, loc) ->
      (let new_env = extend_nl_env (eval_nl_exp exp1 env) env in
       eval_nl_exp exp2 new_env)
-  | NlProcExp (exp, loc) ->
+  | NlProcExp (exp, pos_list, loc) ->
      ProcVal (exp, env)
   | NlApplyExp (exp1, exp_list, loc) ->
      (let proc = eval_nl_exp exp1 env in

@@ -23,10 +23,30 @@ type nl_expression =
   | NlIfExp of nl_expression * nl_expression * nl_expression * Ploc.t
   | NlVarExp of int * Ploc.t
   | NlLetExp of nl_expression * nl_expression * Ploc.t
-  | NlProcExp of nl_expression * Ploc.t
+  | NlProcExp of nl_expression * (int list)  *Ploc.t
   | NlApplyExp of nl_expression * (nl_expression list) * Ploc.t
-  | NlLetRecExp of nl_expression * nl_expression * Ploc.t
-                
+  | NlLetRecExp of nl_expression * (int list) * nl_expression * Ploc.t
+
+let gen_pos_list n =
+  let rec do_gen l =
+    match l with
+    | hd :: tl ->
+       if hd <> 0
+       then do_gen ((hd-1) :: l)
+       else l
+    | [] -> []
+  in do_gen [n-1]
+
+let retrieve_new_env env pos_list =
+  let rec do_retrieve_one env pos =
+    match env with
+    | hd :: tl ->
+       if pos <> 0
+       then do_retrieve_one tl (pos-1)
+       else hd
+    | [] -> raise (MissInEnv "retrieve_new_env fail")
+  in List.map (fun pos -> do_retrieve_one env pos) pos_list
+   
 let rec translate_of exp env =
   match exp with
   | ConstExp (num, loc) ->
@@ -42,9 +62,15 @@ let rec translate_of exp env =
   | LetExp (str, exp1, exp2, loc) ->
      NlLetExp ((translate_of exp1 env), (translate_of exp2 (extend_env str env)), loc)
   | ProcExp (str_list, exp, loc) ->
-     NlProcExp ((translate_of exp (List.append str_list env)), loc)
+     let env_with_proc_arg = List.append str_list env in 
+     let pos_list = gen_pos_list (List.length env_with_proc_arg) in
+     let new_env = retrieve_new_env env_with_proc_arg pos_list in 
+     NlProcExp ((translate_of exp new_env),pos_list, loc)
   | ApplyExp (exp1, exp_ls, loc) ->
      NlApplyExp ((translate_of exp1 env), List.map (fun exp -> translate_of exp env) exp_ls, loc)
   | LetRecExp (var1, str_list, exp1, exp2, loc) ->
-     NlLetRecExp ( (translate_of exp1 (List.append str_list (extend_env var1 env))),
-                    (translate_of exp2 (extend_env var1 env)), loc)
+     let env_with_proc_arg = List.append str_list (extend_env var1 env) in
+     let pos_list = gen_pos_list (List.length env_with_proc_arg) in
+     let new_env = retrieve_new_env env_with_proc_arg pos_list in
+     NlLetRecExp ( (translate_of exp1 new_env), pos_list,
+                   (translate_of exp2 (extend_env var1 env)), loc)
