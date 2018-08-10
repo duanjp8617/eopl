@@ -25,7 +25,7 @@ type nl_expression =
   | NlLetExp of nl_expression * nl_expression * Ploc.t
   | NlProcExp of nl_expression * Ploc.t
   | NlApplyExp of nl_expression * (nl_expression list) * Ploc.t
-  | NlLetRecExp of nl_expression * nl_expression * Ploc.t
+  | NlLetRecExp of (nl_expression list) * nl_expression * Ploc.t
                 
 let rec translate_of exp env =
   match exp with
@@ -43,8 +43,24 @@ let rec translate_of exp env =
      NlLetExp ((translate_of exp1 env), (translate_of exp2 (extend_env str env)), loc)
   | ProcExp (str_list, exp, loc) ->
      NlProcExp ((translate_of exp (List.append str_list env)), loc)
+  | RecProcDef _ -> raise (MissInEnv "Invalid translation of RecProcDef")
   | ApplyExp (exp1, exp_ls, loc) ->
      NlApplyExp ((translate_of exp1 env), List.map (fun exp -> translate_of exp env) exp_ls, loc)
-  | LetRecExp (var1, str_list, exp1, exp2, loc) ->
-     NlLetRecExp ( (translate_of exp1 (List.append str_list (extend_env var1 env))),
-                   (translate_of exp2 (extend_env var1 env)), loc)
+  | LetRecExp (rec_exp_l, exp_body, loc) ->
+     let rec_names = List.map
+                       (fun exp ->
+                         match exp with
+                         | RecProcDef (pname, _, _, _) ->
+                            pname
+                         | _ -> raise (MissInEnv "Invalid letrec expression"))
+                       rec_exp_l in
+     let nl_exp_l = List.map
+                      (fun exp ->
+                        match exp with
+                        | RecProcDef (pname, vnames, pbody, loc) ->
+                           translate_of pbody (List.append vnames (List.append rec_names env))
+                        | _ -> raise (MissInEnv "Invalid letrec expression"))
+                      rec_exp_l in
+     NlLetRecExp ( nl_exp_l,
+                   (translate_of exp_body (List.append rec_names env)), loc)
+       
