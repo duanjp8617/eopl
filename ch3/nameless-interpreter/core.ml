@@ -29,7 +29,7 @@ let rec apply_nl_env num env =
   | [] -> raise (MissInEnv num)
 
 exception InterpreterError of string * Ploc.t
-                            
+
 let rec eval_nl_exp exp env =
   match exp with
   | NlConstExp (num, loc) -> NumVal num
@@ -55,8 +55,8 @@ let rec eval_nl_exp exp env =
   | NlLetExp (exp1, exp2, loc) ->
      (let new_env = extend_nl_env (eval_nl_exp exp1 env) env in
       eval_nl_exp exp2 new_env)
-  | NlProcExp (exp, loc) ->
-     ProcVal (exp, ref env)
+  | NlProcExp (exp, pos_list, loc) ->
+     ProcVal (exp, ref (retrieve_new_env env pos_list))
   | NlApplyExp (exp1, exp_list, loc) ->
      (let proc = eval_nl_exp exp1 env in
       match proc with
@@ -64,9 +64,11 @@ let rec eval_nl_exp exp env =
          (let new_proc_env = List.append (List.map (fun nl_exp -> eval_nl_exp nl_exp env) exp_list) !proc_env in
           eval_nl_exp proc_body new_proc_env)
       | _ -> raise (InterpreterError ("proc is not defined", loc)))
-  | NlLetRecExp (nl_exp_l, exp_body, loc) ->
+  | NlLetRecExp (nl_exp_l, pos_list, exp_body, loc) ->
      let eenv_ref = ref [] in
-     let renv = List.append (List.map (fun nl_exp -> ProcVal (nl_exp, eenv_ref)) nl_exp_l) env in
+     let renv = List.append
+                  (List.map (fun nl_exp -> ProcVal (nl_exp, eenv_ref)) nl_exp_l)
+                  (retrieve_new_env env pos_list) in
      eenv_ref := renv;
      eval_nl_exp exp_body renv 
 
