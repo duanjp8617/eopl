@@ -35,7 +35,10 @@ let gen_pos_list n =
        then do_gen ((hd-1) :: l)
        else l
     | [] -> []
-  in do_gen [n-1]
+  in
+  if n = 0
+  then []
+  else do_gen [n-1]
    
 let retrieve_new_env env pos_list =
   let rec do_retrieve_one env pos =
@@ -46,7 +49,66 @@ let retrieve_new_env env pos_list =
        else hd
     | [] -> raise (MissInEnv "retrieve_new_env fail")
   in List.map (fun pos -> do_retrieve_one env pos) pos_list
-   
+
+let probe_pos exp env =
+  let size = List.length env in
+  let rec do_probe_pos exp env =
+    match exp with
+    | ConstExp _ -> []
+    | DiffExp (exp1, exp2, _) -> (do_probe_pos exp1 env) @ (do_probe_pos exp2 env)
+    | IsZeroExp (exp, _ ) -> do_probe_pos exp env
+    | IfExp (exp1, exp2, exp3, _) ->
+       (do_probe_pos exp1 env) @ (do_probe_pos exp2 env) @ (do_probe_pos exp3 env)
+    | VarExp (str, _) ->
+       let env_len = List.length env in
+       let pos = apply_env str env in
+       (if pos > (env_len-(size+1))
+        then
+          [pos-(env_len-size)]
+        else
+          [])
+    | LetExp (str, exp1, exp2, _) ->
+       (do_probe_pos exp1 env) @ (do_probe_pos exp2 (extend_env str env))
+    | ProcExp (str_list, exp, _) ->
+       (do_probe_pos exp (List.append str_list env))
+    | RecProcDef _ -> raise (MissInEnv "probe_pos error")
+    | ApplyExp (exp1, exp_ls, loc) ->
+       List.fold_left (fun l exp -> l @ (do_probe_pos exp env)) (do_probe_pos exp1 env) exp_ls
+    | LetRecExp (rec_exp_l, exp_body, _) ->
+       let rec_names = List.map
+                         (fun exp ->
+                           match exp with
+                           | RecProcDef (pname, _, _, _) ->
+                              pname
+                           | _ -> raise (MissInEnv "Invalid letrec expression"))
+                         rec_exp_l in
+       let pos_l = List.fold_left
+                     (fun l exp ->
+                       match exp with
+                       | RecProcDef (pname, vnames, pbody, loc) ->
+                          let local_pos_l = do_probe_pos pbody
+                                              (List.append vnames
+                                                 (List.append rec_names
+                                                    env)) in
+                          l @ local_pos_l
+                       | _ -> raise (MissInEnv "Invalid letrec expression"))
+                     []
+                     rec_exp_l in
+       pos_l @ (do_probe_pos exp_body (List.append rec_names env))
+  in
+  let l = do_probe_pos exp env in
+  let l_set = List.fold_left
+                (fun l pos ->
+                  if (List.exists (fun n -> if n=pos then true else false) l)
+                  then l
+                  else pos :: l)
+                [] l in
+  List.fast_sort
+    (fun a b ->
+      if a = b then 0
+      else if a > b then 1 else -1) l_set
+                
+     
 let rec translate_of exp env =
   match exp with
   | ConstExp (num, loc) ->
@@ -62,7 +124,11 @@ let rec translate_of exp env =
   | LetExp (str, exp1, exp2, loc) ->
      NlLetExp ((translate_of exp1 env), (translate_of exp2 (extend_env str env)), loc)
   | ProcExp (str_list, exp, loc) ->
-     let pos_list = (gen_pos_list (List.length env)) in 
+     (* let test_l = probe_pos (ProcExp (str_list, exp, loc)) env in
+      * Printf.printf "[";
+      * List.iter (Printf.printf "%d, ") test_l;
+      * Printf.printf "]\n"; *)
+     let pos_list = probe_pos (ProcExp (str_list, exp, loc)) env in 
      NlProcExp (
          (translate_of exp (List.append str_list (retrieve_new_env env pos_list))),
          pos_list,
@@ -71,7 +137,11 @@ let rec translate_of exp env =
   | ApplyExp (exp1, exp_ls, loc) ->
      NlApplyExp ((translate_of exp1 env), List.map (fun exp -> translate_of exp env) exp_ls, loc)
   | LetRecExp (rec_exp_l, exp_body, loc) ->
-     let pos_list = (gen_pos_list (List.length env)) in
+     (* let test_l = probe_pos (LetRecExp (rec_exp_l, exp_body, loc)) env in
+      * Printf.printf "[";
+      * List.iter (Printf.printf "%d, ") test_l;
+      * Printf.printf "]\n"; *)
+     let pos_list = probe_pos (LetRecExp (rec_exp_l, exp_body, loc)) env in
      let rec_names = List.map
                        (fun exp ->
                          match exp with
