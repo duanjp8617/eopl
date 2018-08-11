@@ -1,21 +1,5 @@
 open Syntax
 
-type environment = string list
-
-exception MissInEnv of string
-                 
-let empty_env () = []
-
-let extend_env variable env = variable :: env
-
-let rec apply_env variable env =
-  match env with
-  | [] -> raise (MissInEnv variable)
-  | x :: ls ->
-     if variable = x
-     then 0
-     else 1 + (apply_env variable ls)
-
 type nl_expression =
   | NlConstExp of int * Ploc.t
   | NlDiffExp of nl_expression * nl_expression * Ploc.t
@@ -23,8 +7,33 @@ type nl_expression =
   | NlIfExp of nl_expression * nl_expression * nl_expression * Ploc.t
   | NlVarExp of int * Ploc.t
   | NlLetExp of nl_expression * nl_expression * Ploc.t
-  | NlProcExp of nl_expression * (int list) *  Ploc.t
+  | NlProcExp of nl_expression * (int list) * Ploc.t
   | NlApplyExp of nl_expression * (nl_expression list) * Ploc.t
+
+type env_var =
+  | VarName of string
+  | ProcExp of string * nl_expression * (int list)
+
+and environment = env_var list
+
+exception MissInEnv of string
+                 
+let empty_env () = []
+
+let extend_env variable env = variable :: env
+
+let get_var_name var =
+  match var with
+  | VarName str -> str
+  | ProcExp (str, _, _) -> str
+                     
+let rec apply_env variable env =
+  match env with
+  | [] -> raise (MissInEnv variable)
+  | x :: ls ->
+     if variable = get_var_name x
+     then 0
+     else 1 + (apply_env variable ls)
    
 let retrieve_new_env env pos_list =
   let rec do_retrieve_one env pos =
@@ -56,9 +65,9 @@ let probe_pos exp env =
         else
           [])
     | LetExp (str, exp1, exp2, _) ->
-       (do_probe_pos exp1 env) @ (do_probe_pos exp2 (extend_env str env))
+       (do_probe_pos exp1 env) @ (do_probe_pos exp2 (extend_env (VarName str) env))
     | ProcExp (str_list, exp, _) ->
-       (do_probe_pos exp (List.append str_list env))
+       (do_probe_pos exp (List.append (List.map (fun name -> VarName name) str_list) env))
     | ApplyExp (exp1, exp_ls, loc) ->
        List.fold_left (fun l exp -> l @ (do_probe_pos exp env)) (do_probe_pos exp1 env) exp_ls
   in
@@ -88,11 +97,13 @@ let rec translate_of exp env =
   | VarExp (str, loc) -> 
      NlVarExp ((apply_env str env), loc)
   | LetExp (str, exp1, exp2, loc) ->
-     NlLetExp ((translate_of exp1 env), (translate_of exp2 (extend_env str env)), loc)
+     NlLetExp ((translate_of exp1 env), (translate_of exp2 (extend_env (VarName str) env)), loc)
   | ProcExp (str_list, exp, loc) ->
      let pos_list = probe_pos (ProcExp (str_list, exp, loc)) env in 
      NlProcExp (
-         (translate_of exp (List.append str_list (retrieve_new_env env pos_list))),
+         (translate_of exp (List.append
+                              (List.map (fun name -> VarName name) str_list)
+                              (retrieve_new_env env pos_list))),
          pos_list,
          loc)
   | ApplyExp (exp1, exp_ls, loc) ->
