@@ -1,5 +1,7 @@
 open Syntax
 
+type environment = string list
+
 type nl_expression =
   | NlConstExp of int * Ploc.t
   | NlDiffExp of nl_expression * nl_expression * Ploc.t
@@ -9,16 +11,9 @@ type nl_expression =
   | NlLetExp of nl_expression * nl_expression * Ploc.t
   | NlProcExp of nl_expression * (int list) * Ploc.t
   | NlApplyExp of nl_expression * (nl_expression list) * Ploc.t
-
-type env_var =
-  | VarName of string
-  | ProcExp of string * nl_expression * (int list)
-
-and environment = env_var list
-
                 
-val empty_env : unit -> environment
+val empty_env : unit -> string list
 
-val translate_of : expression -> environment -> nl_expression                          
+val translate_of : expression -> string list -> nl_expression                          
 
 val retrieve_new_env : 'a list -> int list -> 'a list
