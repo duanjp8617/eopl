@@ -34,7 +34,9 @@ let retrieve_new_env env pos_list =
        then do_retrieve_one tl (pos-1)
        else hd
     | [] -> raise (MissInEnv "retrieve_new_env fail")
-  in List.map (fun pos -> do_retrieve_one env pos) pos_list
+  in
+  let env_len_minus_one = (List.length env) - 1 in 
+  List.map (fun pos -> do_retrieve_one env (env_len_minus_one - pos)) pos_list
 
 let probe_pos exp env =
   let size = List.length env in
@@ -50,7 +52,7 @@ let probe_pos exp env =
        let pos = apply_env str env in
        (if pos > (env_len-(size+1))
         then
-          [pos-(env_len-size)]
+          [(env_len - 1) - pos]
         else
           [])
     | LetExp (str, exp1, exp2, _) ->
