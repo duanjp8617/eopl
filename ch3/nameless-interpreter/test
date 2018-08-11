@@ -25,3 +25,17 @@ letrec
 even(x) = if is_zero(x) then 1 else (odd -(x,1))
 odd(x) = if is_zero(x) then 0 else (even -(x,1))
 in (even 12);
+
+let a = 5 in
+    let b = 6 in
+    let f = proc (x) -(x, -(a, b)) in
+    (f 5);
+
+
+let a = 5 in
+    let b = 6 in
+    let f = proc (x)
+      let y = -(x,a) in -(y, b) in
+    (f 5);
+
+

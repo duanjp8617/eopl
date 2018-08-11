@@ -51,6 +51,9 @@ let retrieve_new_env env pos_list =
   in List.map (fun pos -> do_retrieve_one env pos) pos_list
 
 let probe_pos exp env =
+  Printf.printf "in probe_pos\n";
+  List.iter (Printf.printf "%s, ") env;
+  Printf.printf "\n";
   let size = List.length env in
   let rec do_probe_pos exp env =
     match exp with
@@ -129,6 +132,9 @@ let rec translate_of exp env =
       * List.iter (Printf.printf "%d, ") test_l;
       * Printf.printf "]\n"; *)
      let pos_list = probe_pos (ProcExp (str_list, exp, loc)) env in 
+     Printf.printf "[";
+     List.iter (Printf.printf "%d, ") pos_list;
+     Printf.printf "]\n";
      NlProcExp (
          (translate_of exp (List.append str_list (retrieve_new_env env pos_list))),
          pos_list,
@@ -142,6 +148,9 @@ let rec translate_of exp env =
       * List.iter (Printf.printf "%d, ") test_l;
       * Printf.printf "]\n"; *)
      let pos_list = probe_pos (LetRecExp (rec_exp_l, exp_body, loc)) env in
+     Printf.printf "[";
+     List.iter (Printf.printf "%d, ") pos_list;
+     Printf.printf "]\n";
      let rec_names = List.map
                        (fun exp ->
                          match exp with
