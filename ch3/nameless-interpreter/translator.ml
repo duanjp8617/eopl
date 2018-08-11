@@ -26,19 +26,6 @@ type nl_expression =
   | NlProcExp of nl_expression * (int list) *  Ploc.t
   | NlApplyExp of nl_expression * (nl_expression list) * Ploc.t
   | NlLetRecExp of (nl_expression list) * (int list)  * nl_expression * Ploc.t
-
-let gen_pos_list n =
-  let rec do_gen l =
-    match l with
-    | hd :: tl ->
-       if hd <> 0
-       then do_gen ((hd-1) :: l)
-       else l
-    | [] -> []
-  in
-  if n = 0
-  then []
-  else do_gen [n-1]
    
 let retrieve_new_env env pos_list =
   let rec do_retrieve_one env pos =
@@ -51,9 +38,6 @@ let retrieve_new_env env pos_list =
   in List.map (fun pos -> do_retrieve_one env pos) pos_list
 
 let probe_pos exp env =
-  Printf.printf "in probe_pos\n";
-  List.iter (Printf.printf "%s, ") env;
-  Printf.printf "\n";
   let size = List.length env in
   let rec do_probe_pos exp env =
     match exp with
@@ -127,14 +111,7 @@ let rec translate_of exp env =
   | LetExp (str, exp1, exp2, loc) ->
      NlLetExp ((translate_of exp1 env), (translate_of exp2 (extend_env str env)), loc)
   | ProcExp (str_list, exp, loc) ->
-     (* let test_l = probe_pos (ProcExp (str_list, exp, loc)) env in
-      * Printf.printf "[";
-      * List.iter (Printf.printf "%d, ") test_l;
-      * Printf.printf "]\n"; *)
      let pos_list = probe_pos (ProcExp (str_list, exp, loc)) env in 
-     Printf.printf "[";
-     List.iter (Printf.printf "%d, ") pos_list;
-     Printf.printf "]\n";
      NlProcExp (
          (translate_of exp (List.append str_list (retrieve_new_env env pos_list))),
          pos_list,
@@ -143,14 +120,7 @@ let rec translate_of exp env =
   | ApplyExp (exp1, exp_ls, loc) ->
      NlApplyExp ((translate_of exp1 env), List.map (fun exp -> translate_of exp env) exp_ls, loc)
   | LetRecExp (rec_exp_l, exp_body, loc) ->
-     (* let test_l = probe_pos (LetRecExp (rec_exp_l, exp_body, loc)) env in
-      * Printf.printf "[";
-      * List.iter (Printf.printf "%d, ") test_l;
-      * Printf.printf "]\n"; *)
      let pos_list = probe_pos (LetRecExp (rec_exp_l, exp_body, loc)) env in
-     Printf.printf "[";
-     List.iter (Printf.printf "%d, ") pos_list;
-     Printf.printf "]\n";
      let rec_names = List.map
                        (fun exp ->
                          match exp with
