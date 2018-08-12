@@ -109,7 +109,7 @@ let rec translate_of exp env =
      (let nl_exp1 = translate_of exp1 env in
       match nl_exp1 with
       | NlProcExp (pbody, pos_list, ploc) ->
-         NlLetExp (nl_exp1, (translate_of exp2 (extend_env (EnvProcExp (str, pbody, pos_list)) env)), loc)
+         NlLetExp ((NlConstExp (1024, loc)), (translate_of exp2 (extend_env (EnvProcExp (str, pbody, pos_list)) env)), loc)
       | _ -> NlLetExp (nl_exp1, (translate_of exp2 (extend_env (VarName str) env)), loc))
   | ProcExp (str_list, exp, loc) ->
      let pos_list = probe_pos (ProcExp (str_list, exp, loc)) env in 

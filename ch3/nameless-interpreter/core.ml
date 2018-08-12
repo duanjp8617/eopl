@@ -56,6 +56,7 @@ let rec eval_nl_exp exp env =
      (let new_env = extend_nl_env (eval_nl_exp exp1 env) env in
       eval_nl_exp exp2 new_env)
   | NlProcExp (exp, pos_list, loc) ->
+     Printf.printf("Build a ProcVal.\n");
      ProcVal (exp, ref (retrieve_new_env env pos_list))
   | NlApplyExp (pbody, pos_list, exp_list, loc) ->
      let new_proc_env = List.append
