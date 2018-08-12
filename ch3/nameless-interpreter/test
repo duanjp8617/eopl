@@ -30,3 +30,7 @@ let a = 5 in
     (f 5);
 
 
+let f = proc(x) x in
+  let a = 5 in
+    let g = proc(x) -(a, (f x)) in
+      (g 2);

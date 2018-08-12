@@ -8,11 +8,11 @@ type nl_expression =
   | NlVarExp of int * Ploc.t
   | NlLetExp of nl_expression * nl_expression * Ploc.t
   | NlProcExp of nl_expression * (int list) * Ploc.t
-  | NlApplyExp of nl_expression * (nl_expression list) * Ploc.t
+  | NlApplyExp of nl_expression * (int list)  * (nl_expression list) * Ploc.t
 
 type env_var =
   | VarName of string
-  | ProcExp of string * nl_expression * (int list)
+  | EnvProcExp of string * nl_expression * (int list)
 
 and environment = env_var list
 

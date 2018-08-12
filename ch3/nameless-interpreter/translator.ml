@@ -8,11 +8,11 @@ type nl_expression =
   | NlVarExp of int * Ploc.t
   | NlLetExp of nl_expression * nl_expression * Ploc.t
   | NlProcExp of nl_expression * (int list) * Ploc.t
-  | NlApplyExp of nl_expression * (nl_expression list) * Ploc.t
+  | NlApplyExp of nl_expression * (int list) * (nl_expression list) * Ploc.t
 
 type env_var =
   | VarName of string
-  | ProcExp of string * nl_expression * (int list)
+  | EnvProcExp of string * nl_expression * (int list)
 
 and environment = env_var list
 
@@ -25,7 +25,7 @@ let extend_env variable env = variable :: env
 let get_var_name var =
   match var with
   | VarName str -> str
-  | ProcExp (str, _, _) -> str
+  | EnvProcExp (str, _, _) -> str
                      
 let rec apply_env variable env =
   match env with
@@ -46,6 +46,15 @@ let retrieve_new_env env pos_list =
   in
   let env_len_minus_one = (List.length env) - 1 in 
   List.map (fun pos -> do_retrieve_one env (env_len_minus_one - pos)) pos_list
+
+let rec retrieve_env_var env pos =
+  match env with
+  | hd :: tl ->
+     if pos = 0
+     then hd
+     else retrieve_env_var tl (pos-1)
+  | [] ->
+     raise (MissInEnv "retrieve_env_var fails") 
 
 let probe_pos exp env =
   let size = List.length env in
@@ -97,7 +106,11 @@ let rec translate_of exp env =
   | VarExp (str, loc) -> 
      NlVarExp ((apply_env str env), loc)
   | LetExp (str, exp1, exp2, loc) ->
-     NlLetExp ((translate_of exp1 env), (translate_of exp2 (extend_env (VarName str) env)), loc)
+     (let nl_exp1 = translate_of exp1 env in
+      match nl_exp1 with
+      | NlProcExp (pbody, pos_list, ploc) ->
+         NlLetExp (nl_exp1, (translate_of exp2 (extend_env (EnvProcExp (str, pbody, pos_list)) env)), loc)
+      | _ -> NlLetExp (nl_exp1, (translate_of exp2 (extend_env (VarName str) env)), loc))
   | ProcExp (str_list, exp, loc) ->
      let pos_list = probe_pos (ProcExp (str_list, exp, loc)) env in 
      NlProcExp (
@@ -107,4 +120,13 @@ let rec translate_of exp env =
          pos_list,
          loc)
   | ApplyExp (exp1, exp_ls, loc) ->
-     NlApplyExp ((translate_of exp1 env), List.map (fun exp -> translate_of exp env) exp_ls, loc)     
+     match (translate_of exp1 env) with
+     | NlVarExp (id, loc) ->
+        (match (retrieve_env_var env id) with
+         | VarName _ -> raise (MissInEnv "Calling a non-procedure variable as procedure")
+         | EnvProcExp (_, pbody, pos_list) ->
+            NlApplyExp (pbody, pos_list, List.map (fun exp -> translate_of exp env) exp_ls, loc))
+     | NlProcExp (pbody, pos_list, loc) ->
+        NlApplyExp (pbody, pos_list, List.map (fun exp -> translate_of exp env) exp_ls, loc)
+     | _ -> raise (MissInEnv "Apply expression fails.")
+              
