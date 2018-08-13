@@ -18,6 +18,7 @@ and expression =
   | NewRefExp of expression * Ploc.t
   | DeRefExp of expression * Ploc.t
   | SetRefExp of expression * expression  * Ploc.t
-                           
+  | BeginEndExp of (expression list) * Ploc.t
+               
 val parse : char Stream.t -> program
 

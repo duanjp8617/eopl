@@ -122,8 +122,17 @@ let rec eval_exp exp env =
   | SetRefExp (exp1, exp2, loc) ->
      set_ref (eval_exp exp1 env) (eval_exp exp2 env);
      NumVal 250
-     
-    
+  | BeginEndExp (exp_ls, loc) ->
+     let rec iterate exp_ls =
+       match exp_ls with
+       | hd :: [] -> eval_exp hd env
+       | hd :: tl ->
+          let dummy = eval_exp hd env in 
+          iterate tl
+       | [] -> raise (InterpreterError ("impossible state", loc))
+     in
+     iterate exp_ls
+       
 let eval_top_level (ExpTop e) =
   eval_exp e (empty_env ()) |> string_of_expval |> print_endline
                                                      
