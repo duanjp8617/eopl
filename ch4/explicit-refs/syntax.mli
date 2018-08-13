@@ -15,6 +15,9 @@ and expression =
   | ApplyExp of string * expression * Ploc.t
   | ProcDefExp of string * string * expression * Ploc.t
   | LetRecExp of (expression list) * expression * Ploc.t
-               
+  | NewRefExp of expression * Ploc.t
+  | DeRefExp of expression * Ploc.t
+  | SetRefExp of expression * expression  * Ploc.t
+                           
 val parse : char Stream.t -> program
 

@@ -6,20 +6,21 @@ and expval =
   | NumVal of int
   | BoolVal of bool
   | ProcVal of string * expression * (environment ref)
+  | RefVal of int
 
 let string_of_expval value =
   match value with
   | NumVal n -> string_of_int n
   | BoolVal b -> string_of_bool b
   | ProcVal _ -> "proc"
+  | RefVal _ -> "ref"
              
 let empty_env () = []
 
 let extend_env variable value env = (variable, value) :: env
                                   
 exception MissInEnv of string
-
-                     
+                                        
 let rec apply_env variable env =
   match env with
   | (vname, vvalue) :: tl ->
@@ -30,7 +31,43 @@ let rec apply_env variable env =
      raise (MissInEnv variable)
 
 exception InterpreterError of string * Ploc.t
-                            
+
+(* Global definition of the store and other helpers  *)
+exception InvalidReferenceError of int
+
+let the_store = ref []
+
+let get_store () = the_store              
+
+let initialize_store () =
+  the_store := [];
+  ()
+
+let new_ref value =
+  let ref_id = List.length !the_store in
+  let new_store = !the_store @ [ref value] in
+  the_store := new_store;
+  RefVal ref_id
+
+let rec do_find id lst =
+    match lst with
+    | hd :: tl ->
+       if id = 0
+       then hd
+       else do_find (id-1) tl
+    | [] -> raise (InvalidReferenceError id)
+  
+let deref ref_value  =
+  match ref_value with
+  | RefVal id -> !(do_find id !the_store)
+  | _ -> raise (InvalidReferenceError 1024)
+
+let set_ref ref_value value = 
+  match ref_value with
+  | RefVal id -> (do_find id !the_store) := value; ()
+  | _ -> raise (InvalidReferenceError 1025)
+
+(* The core eval_exp function  *)  
 let rec eval_exp exp env =
   match exp with
   | ConstExp (num, loc) -> NumVal num
@@ -78,6 +115,13 @@ let rec eval_exp exp env =
      let new_env = List.append proc_list env in
      env_ref := new_env;
      eval_exp exp new_env
+  | NewRefExp (exp, loc) ->
+     new_ref (eval_exp exp env)
+  | DeRefExp (exp, loc) ->
+     deref (eval_exp exp env)
+  | SetRefExp (exp1, exp2, loc) ->
+     set_ref (eval_exp exp1 env) (eval_exp exp2 env);
+     NumVal 250
      
     
 let eval_top_level (ExpTop e) =
