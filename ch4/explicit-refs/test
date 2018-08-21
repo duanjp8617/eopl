@@ -24,12 +24,12 @@ even(x) = if is_zero(x) then 1 else (odd -(x,1))
 odd(x) = if is_zero(x) then 0 else (even -(x,1))
 in (odd 12);
 
+let counter = newref(0) in
 let g = proc (dummy)
-          let counter = newref(0)
-          in begin
+          begin
             setref(counter, -(deref(counter), -(0,1)));
 	    deref(counter)
           end
       in let a = (g 11)
          in let b = (g 11)
-            in -(a,b);
+            in b;

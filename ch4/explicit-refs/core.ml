@@ -8,12 +8,15 @@ and expval =
   | ProcVal of string * expression * (environment ref)
   | RefVal of int
 
+and answer =
+  | Answer of expval * ((expval ref) list)
+            
 let string_of_expval value =
   match value with
-  | NumVal n -> string_of_int n
-  | BoolVal b -> string_of_bool b
-  | ProcVal _ -> "proc"
-  | RefVal _ -> "ref"
+  | Answer (NumVal n, _) -> string_of_int n
+  | Answer (BoolVal b, _) -> string_of_bool b
+  | Answer (ProcVal _, _) -> "proc"
+  | Answer (RefVal _, _) -> "ref"
              
 let empty_env () = []
 
@@ -35,19 +38,12 @@ exception InterpreterError of string * Ploc.t
 (* Global definition of the store and other helpers  *)
 exception InvalidReferenceError of int
 
-let the_store = ref []
+let empty_store () = []
 
-let get_store () = the_store              
-
-let initialize_store () =
-  the_store := [];
-  ()
-
-let new_ref value =
-  let ref_id = List.length !the_store in
-  let new_store = !the_store @ [ref value] in
-  the_store := new_store;
-  RefVal ref_id
+let new_ref value store =
+  let ref_id = List.length store in
+  let new_store = store @ [ref value] in
+  Answer ((RefVal ref_id), new_store)
 
 let rec do_find id lst =
     match lst with
@@ -57,50 +53,52 @@ let rec do_find id lst =
        else do_find (id-1) tl
     | [] -> raise (InvalidReferenceError id)
   
-let deref ref_value  =
+let deref ref_value store =
   match ref_value with
-  | RefVal id -> !(do_find id !the_store)
+  | RefVal id -> Answer (!(do_find id store), store)
   | _ -> raise (InvalidReferenceError 1024)
 
-let set_ref ref_value value = 
+let set_ref ref_value value store = 
   match ref_value with
-  | RefVal id -> (do_find id !the_store) := value; ()
+  | RefVal id -> (do_find id store) := value; Answer ( NumVal 250, store)
   | _ -> raise (InvalidReferenceError 1025)
 
 (* The core eval_exp function  *)  
-let rec eval_exp exp env =
+let rec eval_exp exp env store =
   match exp with
-  | ConstExp (num, loc) -> NumVal num
+  | ConstExp (num, loc) -> Answer (NumVal num, store)
   | DiffExp (exp1, exp2, loc) ->
-     let exp_val1 = eval_exp exp1 env in
-     let exp_val2 = eval_exp exp2 env in
+     let Answer (exp_val1, store1) = eval_exp exp1 env store in
+     let Answer (exp_val2, store2) = eval_exp exp2 env store1  in
      (match (exp_val1, exp_val2) with
-      | (NumVal num1, NumVal num2) -> NumVal (num1-num2) 
+      | (NumVal num1, NumVal num2) -> Answer (NumVal (num1-num2), store2) 
       | _ -> raise (InterpreterError ("DiffExp error", loc)))
   | IsZeroExp (exp, loc) ->
-     let exp_val = eval_exp exp env in
+     let Answer (exp_val, store1) = eval_exp exp env store in
      (match exp_val with
-      | NumVal num -> if num = 0 then BoolVal true else BoolVal false
+      | NumVal num -> if num = 0 then Answer (BoolVal true, store1) else Answer (BoolVal false, store1)
       | _ -> raise (InterpreterError ("IsZeroExp error", loc)))
   | IfExp (exp1, exp2, exp3, loc) ->
-     let exp_val1 = eval_exp exp1 env in
+     let Answer (exp_val1, store1) = eval_exp exp1 env store in
      (match exp_val1 with
-      | BoolVal b -> if b then eval_exp exp2 env else eval_exp exp3 env
+      | BoolVal b -> if b then eval_exp exp2 env store1 else eval_exp exp3 env store1
       | _ -> raise (InterpreterError ("IfExp error", loc)))
   | VarExp (str, loc) -> 
-     (try apply_env str env
+     (try Answer (apply_env str env, store)
       with MissInEnv err_msg -> raise (InterpreterError ("Can not find variable " ^ err_msg ^ " in environment", loc)))
   | LetExp (str, exp1, exp2, loc) ->
-     (let new_env = extend_env str (eval_exp exp1 env) env in
-      eval_exp exp2 new_env)
+     (let Answer (exp_val1, store1) = eval_exp exp1 env store in 
+      let new_env = extend_env str exp_val1 env in
+      eval_exp exp2 new_env store1)
   | ProcExp (str, exp, loc) ->
-     ProcVal (str, exp, (ref env))
+     Answer (ProcVal (str, exp, (ref env)), store)
   | ApplyExp (str, exp, loc) ->
      (let proc = apply_env str env in
       match proc with
       | ProcVal (arg_name, proc_body, proc_env_ref) ->
-         (let new_proc_env = extend_env arg_name (eval_exp exp env) !proc_env_ref in
-          eval_exp proc_body new_proc_env)
+         (let Answer (exp_val, store1) = eval_exp exp env store in
+          let new_proc_env = extend_env arg_name exp_val !proc_env_ref in
+          eval_exp proc_body new_proc_env store1)
       | _ -> raise (InterpreterError ("proc is not defined", loc)))
   | ProcDefExp (_, _, _, loc) -> raise (InterpreterError ("we don't evaluate procedure definition", loc))
   | LetRecExp (ls, exp, loc) ->
@@ -114,26 +112,29 @@ let rec eval_exp exp env =
                        ls in
      let new_env = List.append proc_list env in
      env_ref := new_env;
-     eval_exp exp new_env
+     eval_exp exp new_env store
   | NewRefExp (exp, loc) ->
-     new_ref (eval_exp exp env)
+     (let Answer (exp_val, store1) = eval_exp exp env store in 
+      new_ref exp_val store1)
   | DeRefExp (exp, loc) ->
-     deref (eval_exp exp env)
+     (let Answer (exp_val, store1) = eval_exp exp env store in
+      deref exp_val store1)
   | SetRefExp (exp1, exp2, loc) ->
-     set_ref (eval_exp exp1 env) (eval_exp exp2 env);
-     NumVal 250
+     let Answer (exp_val1, store1) = eval_exp exp1 env store in
+     let Answer (exp_val2, store2) = eval_exp exp2 env store1 in
+     set_ref exp_val1 exp_val2 store2
   | BeginEndExp (exp_ls, loc) ->
-     let rec iterate exp_ls =
+     let rec iterate exp_ls store =
        match exp_ls with
-       | hd :: [] -> eval_exp hd env
+       | hd :: [] -> eval_exp hd env store
        | hd :: tl ->
-          let dummy = eval_exp hd env in 
-          iterate tl
+          let Answer (exp_val, new_store) = eval_exp hd env store in 
+          iterate tl new_store
        | [] -> raise (InterpreterError ("impossible state", loc))
      in
-     iterate exp_ls
-       
+     iterate exp_ls store
+     
 let eval_top_level (ExpTop e) =
-  eval_exp e (empty_env ()) |> string_of_expval |> print_endline
+  eval_exp e (empty_env ()) (empty_store ()) |> string_of_expval |> print_endline
                                                      
 let value_of_program (AProgram tl_list) = List.iter eval_top_level tl_list 
