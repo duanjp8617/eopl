@@ -84,12 +84,14 @@ let rec eval_exp exp env store =
       | BoolVal b -> if b then eval_exp exp2 env store1 else eval_exp exp3 env store1
       | _ -> raise (InterpreterError ("IfExp error", loc)))
   | VarExp (str, loc) -> 
-     (try Answer (apply_env str env, store)
+     (
+       try Answer (apply_env str env, store)
       with MissInEnv err_msg -> raise (InterpreterError ("Can not find variable " ^ err_msg ^ " in environment", loc)))
   | LetExp (str, exp1, exp2, loc) ->
-     (let Answer (exp_val1, store1) = eval_exp exp1 env store in 
-      let new_env = extend_env str exp_val1 env in
-      eval_exp exp2 new_env store1)
+     (let Answer (exp_val1, store1) = eval_exp exp1 env store in
+      let Answer (ref_val, store2) = newref exp_val1 store1 in
+      let new_env = extend_env str ref_val env in
+      eval_exp exp2 new_env store2)
   | ProcExp (str, exp, loc) ->
      Answer (ProcVal (str, exp, (ref env)), store)
   | ApplyExp (str, exp, loc) ->
