@@ -84,37 +84,42 @@ let rec eval_exp exp env store =
       | BoolVal b -> if b then eval_exp exp2 env store1 else eval_exp exp3 env store1
       | _ -> raise (InterpreterError ("IfExp error", loc)))
   | VarExp (str, loc) -> 
-     (
-       try Answer (apply_env str env, store)
+     (try deref (apply_env str env) store
       with MissInEnv err_msg -> raise (InterpreterError ("Can not find variable " ^ err_msg ^ " in environment", loc)))
   | LetExp (str, exp1, exp2, loc) ->
      (let Answer (exp_val1, store1) = eval_exp exp1 env store in
-      let Answer (ref_val, store2) = newref exp_val1 store1 in
+      let Answer (ref_val, store2) = new_ref exp_val1 store1 in
       let new_env = extend_env str ref_val env in
       eval_exp exp2 new_env store2)
   | ProcExp (str, exp, loc) ->
      Answer (ProcVal (str, exp, (ref env)), store)
   | ApplyExp (str, exp, loc) ->
-     (let proc = apply_env str env in
+     (let Answer (proc, store1) = deref (apply_env str env) store in
       match proc with
       | ProcVal (arg_name, proc_body, proc_env_ref) ->
-         (let Answer (exp_val, store1) = eval_exp exp env store in
-          let new_proc_env = extend_env arg_name exp_val !proc_env_ref in
-          eval_exp proc_body new_proc_env store1)
+         (let Answer (exp_val, store2) = eval_exp exp env store1 in
+          let Answer (ref_val, store3) = new_ref exp_val store2 in 
+          let new_proc_env = extend_env arg_name ref_val !proc_env_ref in
+          eval_exp proc_body new_proc_env store3)
       | _ -> raise (InterpreterError ("proc is not defined", loc)))
   | ProcDefExp (_, _, _, loc) -> raise (InterpreterError ("we don't evaluate procedure definition", loc))
   | LetRecExp (ls, exp, loc) ->
      let env_ref = ref [] in
-     let proc_list = List.map
-                       (fun exp ->
-                         match exp with
-                         | ProcDefExp (proc_name, proc_var_name, proc_body, ploc) ->
-                            (proc_name, ProcVal (proc_var_name, proc_body, env_ref))
-                         | _ -> raise (InterpreterError ("Impossible error.", loc)))
-                       ls in
-     let new_env = List.append proc_list env in
+     let (store1, proc_ref_list) = List.fold_left
+                                     (fun (accum_store, ref_list) exp ->
+                                       match exp with
+                                       | ProcDefExp (proc_name, proc_var_name, proc_body, ploc) ->
+                                          let Answer (ref_val, new_store) =
+                                            new_ref
+                                              (ProcVal (proc_var_name, proc_body, env_ref))
+                                              accum_store in
+                                          (new_store, (proc_name, ref_val) :: ref_list)
+                                       |_ -> raise (InterpreterError ("Impossible error.", loc))
+                                     )
+                                     (store, []) ls in
+     let new_env = List.append proc_ref_list env in
      env_ref := new_env;
-     eval_exp exp new_env store
+     eval_exp exp new_env store1
   | NewRefExp (exp, loc) ->
      (let Answer (exp_val, store1) = eval_exp exp env store in 
       new_ref exp_val store1)
