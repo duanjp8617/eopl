@@ -33,3 +33,31 @@ let g = proc (dummy)
       in let a = (g 11)
          in let b = (g 11)
             in b;
+
+let x = 0
+in letrec even(dummy)
+           = if is_zero(x)
+             then 1
+             else begin
+                   set x = -(x,1);
+                   (odd 888)
+             end
+          odd(dummy)
+           = if is_zero(x)
+             then 0
+             else begin
+                   set x = -(x,1);
+                   (even 888)
+             end
+in begin set x = 11; (even 888) end;
+
+
+let g = let count = 0
+      	in proc (dummy)
+	   begin
+            set count = -(count,-(0,1));
+            count
+           end
+in let a = (g 11)
+in let b = (g 11)
+in -(a,b);

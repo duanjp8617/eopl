@@ -19,7 +19,8 @@ and expression =
   | DeRefExp of expression * Ploc.t
   | SetRefExp of expression * expression  * Ploc.t
   | BeginEndExp of (expression list) * Ploc.t
-    
+  | SetExp of string * expression * Ploc.t
+                 
 let g = Grammar.gcreate (Plexer.gmake ())
 
 let p = Grammar.Entry.create g "program"
@@ -53,6 +54,7 @@ e : [
       | "deref"; "("; exp = e; ")" -> DeRefExp (exp, loc)
       | "setref"; "("; exp1 = e; ","; exp2 = e; ")" -> SetRefExp (exp1, exp2, loc)
       | "begin"; exp_ls = LIST1 e SEP ";"; "end" -> BeginEndExp (exp_ls, loc)
+      | "set"; var = LIDENT; "="; exp = e -> SetExp (var, exp, loc)
       ]
 ];
 

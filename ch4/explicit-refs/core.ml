@@ -140,6 +140,9 @@ let rec eval_exp exp env store =
        | [] -> raise (InterpreterError ("impossible state", loc))
      in
      iterate exp_ls store
+  | SetExp (var_name, exp, loc) ->
+     let Answer (exp_val, store1) = eval_exp exp env store in
+     set_ref (apply_env var_name env) exp_val store1
      
 let eval_top_level (ExpTop e) =
   eval_exp e (empty_env ()) (empty_store ()) |> string_of_expval |> print_endline
