@@ -20,6 +20,7 @@ and expression =
   | SetRefExp of expression * expression  * Ploc.t
   | BeginEndExp of (expression list) * Ploc.t
   | SetExp of string * expression * Ploc.t
+  | SetDynamicExp of string * expression * expression * Ploc.t
             
 val parse : char Stream.t -> program
 

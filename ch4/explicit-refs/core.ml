@@ -143,6 +143,15 @@ let rec eval_exp exp env store =
   | SetExp (var_name, exp, loc) ->
      let Answer (exp_val, store1) = eval_exp exp env store in
      set_ref (apply_env var_name env) exp_val store1
+  | SetDynamicExp (var, temp_exp, body, loc) ->
+     let old_val_ref = apply_env var env in 
+     let Answer (old_val, store1) = deref old_val_ref store in
+     let Answer (temp_val, store2) = eval_exp temp_exp env store1 in
+     let Answer (_, store3) = set_ref old_val_ref temp_val store2 in
+     let Answer (res_val, store4) = eval_exp body env store3 in
+     let Answer (_, store5) = set_ref old_val_ref old_val store4 in
+     Answer (res_val, store5)
+     
      
 let eval_top_level (ExpTop e) =
   eval_exp e (empty_env ()) (empty_store ()) |> string_of_expval |> print_endline
