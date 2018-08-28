@@ -94,10 +94,10 @@ let rec eval_exp exp env store =
   | ProcExp (str, exp, loc) ->
      Answer (ProcVal (str, exp, (ref env)), store)
   | ApplyExp (str, exp, loc) ->
-     (let Answer (proc, store1) = deref (apply_env str env) store in
+     (let Answer (proc, _) = deref (apply_env str env) store in
       match proc with
       | ProcVal (arg_name, proc_body, proc_env_ref) ->
-         (let Answer (exp_val, store2) = eval_exp exp env store1 in
+         (let Answer (exp_val, store2) = eval_exp exp env store in
           let Answer (ref_val, store3) = new_ref exp_val store2 in 
           let new_proc_env = extend_env arg_name ref_val !proc_env_ref in
           eval_exp proc_body new_proc_env store3)
@@ -145,12 +145,12 @@ let rec eval_exp exp env store =
      set_ref (apply_env var_name env) exp_val store1
   | SetDynamicExp (var, temp_exp, body, loc) ->
      let old_val_ref = apply_env var env in 
-     let Answer (old_val, store1) = deref old_val_ref store in
-     let Answer (temp_val, store2) = eval_exp temp_exp env store1 in
-     let Answer (_, store3) = set_ref old_val_ref temp_val store2 in
-     let Answer (res_val, store4) = eval_exp body env store3 in
-     let Answer (_, store5) = set_ref old_val_ref old_val store4 in
-     Answer (res_val, store5)
+     let Answer (old_val, _) = deref old_val_ref store in
+     let Answer (temp_val, store1) = eval_exp temp_exp env store in
+     let _ = set_ref old_val_ref temp_val store1 in
+     let Answer (res_val, store2) = eval_exp body env store1 in
+     let _ = set_ref old_val_ref old_val store2 in
+     Answer (res_val, store2)
      
      
 let eval_top_level (ExpTop e) =
