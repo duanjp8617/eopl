@@ -153,12 +153,49 @@ let rec eval_exp exp env store =
      let _ = set_ref old_val_ref old_val store2 in
      Answer (res_val, store2)
 
-(* let rec eval_stmt stmt env store =
- *   match stmt with
- *   | AssignStmt (str, exp, loc) ->
- *      let Answer (exp_val, store1) = eval_exp exp env store in
- *      let Answer (new_ref, store2) = new_ref exp_val store1 in *)
+let rec eval_stmt stmt env store =
+  match stmt with
+  | AssignStmt (str, exp, loc) ->
+     let Answer (exp_val, store1) = eval_exp exp env store in
+     set_ref (apply_env str env) exp_val store1;
+     store1
+  | PrintStmt (exp, loc) ->
+     let Answer (exp_val, store1) = eval_exp exp env store in
+     print_string (string_of_expval (Answer (exp_val, store1)));
+     store1
+  | AListOfStmt (stmt_ls, loc) ->
+     List.fold_left
+       (fun accum_store stmt ->
+         eval_stmt stmt env accum_store)
+       store stmt_ls
+  | IfStmt (exp, stmt1, stmt2, loc) ->
+     let Answer (exp_val, store1) = eval_exp exp env store in
+     ( match exp_val with
+       | BoolVal b ->
+          (if b 
+           then eval_stmt stmt1 env store1
+           else eval_stmt stmt2 env store1)
+       | _ -> raise (InterpreterError ("if statement is expecting a boolean value.", loc)))
+  | WhileStmt (cond_exp, loop_stmt, loc) ->
+     let Answer (exp_val, store1) = eval_exp cond_exp env store in
+     (match exp_val with
+      | BoolVal b ->
+         (if b
+          then eval_stmt (WhileStmt (cond_exp, loop_stmt, loc)) env (eval_stmt loop_stmt env store1)
+          else store1)
+
+      | _ -> raise (InterpreterError ("while statement is expecting a boolean value", loc)))
+  | DefinitionStmt (str_ls, stmt, loc) ->
+     let (new_env, new_store) = List.fold_left
+                                  (fun (accum_env, accum_store) str ->
+                                    let Answer (ref_val, store1) =
+                                      new_ref (NumVal 250) accum_store in
+                                    (((str, ref_val) :: accum_env), store1))
+                                  (env, store)
+                                  str_ls in
+     eval_stmt stmt new_env new_store
      
+  
      
      
 let eval_top_level (ExpTop e) =
