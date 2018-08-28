@@ -21,7 +21,8 @@ and expression =
   | BeginEndExp of (expression list) * Ploc.t
   | SetExp of string * expression * Ploc.t
   | SetDynamicExp of string * expression * expression * Ploc.t
-                   
+  | NotExp of expression * Ploc.t
+    
 and statement =
   | AssignStmt of string * expression * Ploc.t
   | PrintStmt of expression * Ploc.t
@@ -30,5 +31,6 @@ and statement =
   | WhileStmt of expression * statement * Ploc.t
   | DefinitionStmt of (string list) * statement * Ploc.t
                    
-val parse : char Stream.t -> program
+(* val parse : char Stream.t -> program *)
+val parse : char Stream.t -> statement                                 
 

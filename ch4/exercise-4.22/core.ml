@@ -152,6 +152,12 @@ let rec eval_exp exp env store =
      let Answer (res_val, store2) = eval_exp body env store1 in
      let _ = set_ref old_val_ref old_val store2 in
      Answer (res_val, store2)
+  | NotExp (exp, loc) ->
+     let Answer (exp_val, store1) = eval_exp exp env store in
+     (match exp_val with
+      | BoolVal b ->
+         if b then Answer (BoolVal false, store1) else Answer (BoolVal true, store1)
+      | _ -> raise (InterpreterError ("not expression is expecting a boolean value", loc)))
 
 let rec eval_stmt stmt env store =
   match stmt with
@@ -161,7 +167,7 @@ let rec eval_stmt stmt env store =
      store1
   | PrintStmt (exp, loc) ->
      let Answer (exp_val, store1) = eval_exp exp env store in
-     print_string (string_of_expval (Answer (exp_val, store1)));
+     print_endline (string_of_expval (Answer (exp_val, store1)));
      store1
   | AListOfStmt (stmt_ls, loc) ->
      List.fold_left
@@ -181,7 +187,8 @@ let rec eval_stmt stmt env store =
      (match exp_val with
       | BoolVal b ->
          (if b
-          then eval_stmt (WhileStmt (cond_exp, loop_stmt, loc)) env (eval_stmt loop_stmt env store1)
+          then eval_stmt
+                 (WhileStmt (cond_exp, loop_stmt, loc)) env (eval_stmt loop_stmt env store1)
           else store1)
 
       | _ -> raise (InterpreterError ("while statement is expecting a boolean value", loc)))
@@ -198,7 +205,11 @@ let rec eval_stmt stmt env store =
   
      
      
-let eval_top_level (ExpTop e) =
-  eval_exp e (empty_env ()) (empty_store ()) |> string_of_expval |> print_endline
-                                                     
-let value_of_program (AProgram tl_list) = List.iter eval_top_level tl_list 
+(* let eval_top_level (ExpTop e) =
+ *   eval_exp e (empty_env ()) (empty_store ()) |> string_of_expval |> print_endline
+ *                                                      
+ * let value_of_program (AProgram tl_list) = List.iter eval_top_level tl_list *) 
+
+let value_of_program st =
+  let _ = eval_stmt st (empty_env ()) (empty_store ()) in
+  ()

@@ -21,7 +21,8 @@ and expression =
   | BeginEndExp of (expression list) * Ploc.t
   | SetExp of string * expression * Ploc.t
   | SetDynamicExp of string * expression * expression * Ploc.t
-
+  | NotExp of expression * Ploc.t
+                   
 and statement =
   | AssignStmt of string * expression * Ploc.t
   | PrintStmt of expression * Ploc.t
@@ -36,9 +37,12 @@ let p = Grammar.Entry.create g "program"
 let t = Grammar.Entry.create g "top_level"
 let e = Grammar.Entry.create g "expression"
 let l = Grammar.Entry.create g "list"
-      
-let parse = Grammar.Entry.parse p
 
+let st = Grammar.Entry.create g "statement"
+      
+(* let parse = Grammar.Entry.parse p *)
+let parse = Grammar.Entry.parse st
+           
 
 EXTEND
 p : [
@@ -65,11 +69,23 @@ e : [
       | "begin"; exp_ls = LIST1 e SEP ";"; "end" -> BeginEndExp (exp_ls, loc)
       | "set"; var = LIDENT; "="; exp = e -> SetExp (var, exp, loc)
       | "setdynamic"; var = LIDENT; "="; exp1 = e; "during"; exp2 = e -> SetDynamicExp (var, exp1, exp2, loc)
+      | "not"; "("; exp = e; ")" -> NotExp(exp, loc)
       ]
 ];
 
 l : [
       [var1 = LIDENT; "("; var2 = LIDENT; ")"; "="; exp1 = e -> ProcDefExp (var1, var2, exp1, loc)]
 ];
+
+st : [
+    [ var = LIDENT; "="; exp = e -> AssignStmt (var, exp, loc)
+    | "print"; exp = e -> PrintStmt (exp, loc)
+    | "{"; st_ls = LIST1 st SEP ";"; "}" -> AListOfStmt (st_ls, loc)
+    | "if"; exp = e; stmt1 = st; stmt2 = st -> IfStmt (exp, stmt1, stmt2, loc)
+    | "while"; exp = e; stmt = st -> WhileStmt (exp, stmt, loc)
+    | "var"; str_ls = LIST1 LIDENT SEP ","; ";"; stmt = st -> DefinitionStmt (str_ls, stmt, loc)
+    ]
+];
+
 
 END
