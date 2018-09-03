@@ -1,12 +1,11 @@
 open Syntax
 
-type environment = (string * expval) list
+type environment = (string * int) list
 
 and expval =
   | NumVal of int
   | BoolVal of bool
   | ProcVal of string * expression * (environment ref)
-  | RefVal of int
 
 and answer =
   | Answer of expval * ((expval ref) list)
@@ -16,7 +15,6 @@ let string_of_expval value =
   | Answer (NumVal n, _) -> string_of_int n
   | Answer (BoolVal b, _) -> string_of_bool b
   | Answer (ProcVal _, _) -> "proc"
-  | Answer (RefVal _, _) -> "ref"
              
 let empty_env () = []
 
@@ -43,7 +41,7 @@ let empty_store () = []
 let new_ref value store =
   let ref_id = List.length store in
   let new_store = store @ [ref value] in
-  Answer ((RefVal ref_id), new_store)
+  (ref_id, new_store)
 
 let rec do_find id lst =
     match lst with
@@ -54,15 +52,12 @@ let rec do_find id lst =
     | [] -> raise (InvalidReferenceError id)
   
 let deref ref_value store =
-  match ref_value with
-  | RefVal id -> !(do_find id store)
-  | _ -> raise (InvalidReferenceError 1024)
+  !(do_find ref_value store)
+  
 
 let set_ref ref_value value store = 
-  match ref_value with
-  | RefVal id -> (do_find id store) := value
-  | _ -> raise (InvalidReferenceError 1025)
-
+  (do_find ref_value store) := value
+  
 (* The core eval_exp function  *)  
 let rec eval_exp exp env store =
   match exp with
@@ -88,7 +83,7 @@ let rec eval_exp exp env store =
       with MissInEnv err_msg -> raise (InterpreterError ("Can not find variable " ^ err_msg ^ " in environment", loc)))
   | LetExp (str, exp1, exp2, loc) ->
      (let Answer (exp_val1, store1) = eval_exp exp1 env store in
-      let Answer (ref_val, store2) = new_ref exp_val1 store1 in
+      let (ref_val, store2) = new_ref exp_val1 store1 in
       let new_env = extend_env str ref_val env in
       eval_exp exp2 new_env store2)
   | ProcExp (str, exp, loc) ->
@@ -97,7 +92,7 @@ let rec eval_exp exp env store =
      (match deref (apply_env str env) store with
       | ProcVal (arg_name, proc_body, proc_env_ref) ->
          (let Answer (exp_val, store2) = eval_exp exp env store in
-          let Answer (ref_val, store3) = new_ref exp_val store2 in 
+          let (ref_val, store3) = new_ref exp_val store2 in 
           let new_proc_env = extend_env arg_name ref_val !proc_env_ref in
           eval_exp proc_body new_proc_env store3)
       | _ -> raise (InterpreterError ("proc is not defined", loc)))
@@ -108,7 +103,7 @@ let rec eval_exp exp env store =
                                      (fun (accum_store, ref_list) exp ->
                                        match exp with
                                        | ProcDefExp (proc_name, proc_var_name, proc_body, ploc) ->
-                                          let Answer (ref_val, new_store) =
+                                          let (ref_val, new_store) =
                                             new_ref
                                               (ProcVal (proc_var_name, proc_body, env_ref))
                                               accum_store in
@@ -119,17 +114,6 @@ let rec eval_exp exp env store =
      let new_env = List.append proc_ref_list env in
      env_ref := new_env;
      eval_exp exp new_env store1
-  | NewRefExp (exp, loc) ->
-     (let Answer (exp_val, store1) = eval_exp exp env store in 
-      new_ref exp_val store1)
-  | DeRefExp (exp, loc) ->
-     (let Answer (exp_val, store1) = eval_exp exp env store in
-      Answer ((deref exp_val store1), store1))
-  | SetRefExp (exp1, exp2, loc) ->
-     let Answer (exp_val1, store1) = eval_exp exp1 env store in
-     let Answer (exp_val2, store2) = eval_exp exp2 env store1 in
-     set_ref exp_val1 exp_val2 store2;
-     Answer (NumVal 250, store2)
   | BeginEndExp (exp_ls, loc) ->
      let rec iterate exp_ls store =
        match exp_ls with

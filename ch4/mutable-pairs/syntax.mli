@@ -15,9 +15,6 @@ and expression =
   | ApplyExp of string * expression * Ploc.t
   | ProcDefExp of string * string * expression * Ploc.t
   | LetRecExp of (expression list) * expression * Ploc.t
-  | NewRefExp of expression * Ploc.t
-  | DeRefExp of expression * Ploc.t
-  | SetRefExp of expression * expression  * Ploc.t
   | BeginEndExp of (expression list) * Ploc.t
   | SetExp of string * expression * Ploc.t
   | SetDynamicExp of string * expression * expression * Ploc.t

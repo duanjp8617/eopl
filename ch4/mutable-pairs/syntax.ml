@@ -15,9 +15,6 @@ and expression =
   | ApplyExp of string * expression * Ploc.t
   | ProcDefExp of string * string * expression * Ploc.t
   | LetRecExp of (expression list) * expression * Ploc.t
-  | NewRefExp of expression * Ploc.t
-  | DeRefExp of expression * Ploc.t
-  | SetRefExp of expression * expression  * Ploc.t
   | BeginEndExp of (expression list) * Ploc.t
   | SetExp of string * expression * Ploc.t
   | SetDynamicExp of string * expression * expression * Ploc.t
@@ -51,9 +48,6 @@ e : [
       | "("; var = LIDENT; exp = e; ")" -> ApplyExp (var, exp, loc)
       | "let"; var = LIDENT; "="; exp1 = e; "in"; exp2 = e -> LetExp (var, exp1, exp2, loc)
       | "letrec"; ls = LIST1 l; "in"; exp2 = e -> LetRecExp (ls, exp2, loc)
-      | "newref"; "("; exp = e; ")" -> NewRefExp (exp, loc)
-      | "deref"; "("; exp = e; ")" -> DeRefExp (exp, loc)
-      | "setref"; "("; exp1 = e; ","; exp2 = e; ")" -> SetRefExp (exp1, exp2, loc)
       | "begin"; exp_ls = LIST1 e SEP ";"; "end" -> BeginEndExp (exp_ls, loc)
       | "set"; var = LIDENT; "="; exp = e -> SetExp (var, exp, loc)
       | "setdynamic"; var = LIDENT; "="; exp1 = e; "during"; exp2 = e -> SetDynamicExp (var, exp1, exp2, loc)
