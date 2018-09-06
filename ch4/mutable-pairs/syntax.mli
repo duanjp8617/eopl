@@ -18,6 +18,11 @@ and expression =
   | BeginEndExp of (expression list) * Ploc.t
   | SetExp of string * expression * Ploc.t
   | SetDynamicExp of string * expression * expression * Ploc.t
-                                      
+  | NewPairExp of expression * expression * Ploc.t
+  | LeftExp of expression * Ploc.t
+  | RightExp of expression * Ploc.t
+  | SetLeftExp of expression * expression * Ploc.t
+  | SetRightExp of expression * expression  * Ploc.t
+                 
 val parse : char Stream.t -> program
 

@@ -6,6 +6,7 @@ and expval =
   | NumVal of int
   | BoolVal of bool
   | ProcVal of string * expression * (environment ref)
+  | MutPairVal of int * int 
 
 and answer =
   | Answer of expval * ((expval ref) list)
@@ -15,6 +16,7 @@ let string_of_expval value =
   | Answer (NumVal n, _) -> string_of_int n
   | Answer (BoolVal b, _) -> string_of_bool b
   | Answer (ProcVal _, _) -> "proc"
+  | Answer (MutPairVal _, _) -> "mutable_pair"
              
 let empty_env () = []
 
@@ -135,7 +137,36 @@ let rec eval_exp exp env store =
      let _ = set_ref old_val_ref temp_val store1 in
      let Answer (res_val, store2) = eval_exp body env store1 in
      let _ = set_ref old_val_ref old_val store2 in
-     Answer (res_val, store2)     
+     Answer (res_val, store2)
+  | NewPairExp (exp1, exp2, loc) ->
+     let Answer (exp_val1, store1) = eval_exp exp1 env store in
+     let Answer (exp_val2, store2) = eval_exp exp2 env store1 in
+     let (ref_val1, store3) = new_ref exp_val1 store2 in
+     let (ref_val2, store4) = new_ref exp_val2 store3 in
+     Answer (MutPairVal (ref_val1, ref_val2), store4)
+  | LeftExp (exp, loc) ->
+     let Answer (exp_val, store1) = eval_exp exp env store in
+     (match exp_val with
+      | MutPairVal (l, r) -> Answer (deref l store1, store1)
+      | _ ->raise (InterpreterError ("left is expecting a mutable pair.", loc)))
+  | RightExp (exp, loc) ->
+     let Answer (exp_val, store1) = eval_exp exp env store in
+     (match exp_val with
+      | MutPairVal (l, r) -> Answer (deref r store1, store1)
+      | _ -> raise (InterpreterError ("right is expecting a mutable pair.", loc)))
+  | SetLeftExp (exp1, exp2, loc) ->
+     let Answer (mp_val, store1) = eval_exp exp1 env store in
+     let Answer (some_val, store2) = eval_exp exp2 env store1 in
+     (match mp_val with
+      | MutPairVal (l,r) -> set_ref l some_val store2; Answer (NumVal 23, store2)
+      | _ -> raise (InterpreterError ("setleft is expecting a mutable pair.", loc)))
+  | SetRightExp (exp1, exp2, loc) ->
+     let Answer (mp_val, store1) = eval_exp exp1 env store in
+     let Answer (some_val, store2) = eval_exp exp2 env store1 in
+     (match mp_val with
+      | MutPairVal (l,r) -> set_ref r some_val store2; Answer (NumVal 23, store2)
+      | _ -> raise (InterpreterError ("setright is expecting a mutable pair.", loc)))
+    
      
 let eval_top_level (ExpTop e) =
   eval_exp e (empty_env ()) (empty_store ()) |> string_of_expval |> print_endline
