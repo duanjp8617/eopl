@@ -18,11 +18,10 @@ and expression =
   | BeginEndExp of (expression list) * Ploc.t
   | SetExp of string * expression * Ploc.t
   | SetDynamicExp of string * expression * expression * Ploc.t
-  | NewPairExp of expression * expression * Ploc.t
-  | LeftExp of expression * Ploc.t
-  | RightExp of expression * Ploc.t
-  | SetLeftExp of expression * expression * Ploc.t
-  | SetRightExp of expression * expression  * Ploc.t
+  | NewArrayExp of (expression list) * Ploc.t
+  | ArrayRefExp of expression * expression * Ploc.t
+  | ArraySetExp of expression * expression * expression * Ploc.t
+
   
                  
 let g = Grammar.gcreate (Plexer.gmake ())
@@ -57,12 +56,9 @@ e : [
       | "begin"; exp_ls = LIST1 e SEP ";"; "end" -> BeginEndExp (exp_ls, loc)
       | "set"; var = LIDENT; "="; exp = e -> SetExp (var, exp, loc)
       | "setdynamic"; var = LIDENT; "="; exp1 = e; "during"; exp2 = e -> SetDynamicExp (var, exp1, exp2, loc)
-      | "pair"; "("; exp1 = e; ","; exp2 = e; ")" -> NewPairExp(exp1, exp2, loc)
-      | "left"; "("; exp = e; ")" -> LeftExp(exp, loc)
-      | "right"; "("; exp = e; ")" -> RightExp(exp, loc)
-      | "setleft"; "("; exp1 = e; ","; exp2 = e; ")" -> SetLeftExp(exp1, exp2, loc)
-      | "setright"; "("; exp1 = e; ","; exp2 = e; ")" -> SetRightExp(exp1, exp2, loc)
-      
+      | "newarray"; "("; exp_ls = LIST1 e SEP ","; ")" -> NewArrayExp(exp_ls, loc)
+      | "arrayref"; "("; exp1 = e; ","; exp2 = e; ")" -> ArrayRefExp(exp1, exp2, loc)
+      | "arrayset"; "("; exp1 = e; ","; exp2 = e; ","; exp3 = e; ")" -> ArraySetExp(exp1, exp2, exp3, loc)  
       ]
 ];
 

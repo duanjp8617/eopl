@@ -6,7 +6,7 @@ and expval =
   | NumVal of int
   | BoolVal of bool
   | ProcVal of string * expression * (environment ref)
-  | MutPairVal of int * int 
+  | MutArrayVal of int * int 
 
 and answer =
   | Answer of expval * ((expval ref) list)
@@ -16,7 +16,7 @@ let string_of_expval value =
   | Answer (NumVal n, _) -> string_of_int n
   | Answer (BoolVal b, _) -> string_of_bool b
   | Answer (ProcVal _, _) -> "proc"
-  | Answer (MutPairVal _, _) -> "mutable_pair"
+  | Answer (MutArrayVal _, _) -> "mutable_array"
              
 let empty_env () = []
 
@@ -138,35 +138,41 @@ let rec eval_exp exp env store =
      let Answer (res_val, store2) = eval_exp body env store1 in
      let _ = set_ref old_val_ref old_val store2 in
      Answer (res_val, store2)
-  | NewPairExp (exp1, exp2, loc) ->
-     let Answer (exp_val1, store1) = eval_exp exp1 env store in
-     let Answer (exp_val2, store2) = eval_exp exp2 env store1 in
-     let (ref_val1, store3) = new_ref exp_val1 store2 in
-     let (ref_val2, store4) = new_ref exp_val2 store3 in
-     Answer (MutPairVal (ref_val1, ref_val2), store4)
-  | LeftExp (exp, loc) ->
-     let Answer (exp_val, store1) = eval_exp exp env store in
-     (match exp_val with
-      | MutPairVal (l, r) -> Answer (deref l store1, store1)
-      | _ ->raise (InterpreterError ("left is expecting a mutable pair.", loc)))
-  | RightExp (exp, loc) ->
-     let Answer (exp_val, store1) = eval_exp exp env store in
-     (match exp_val with
-      | MutPairVal (l, r) -> Answer (deref r store1, store1)
-      | _ -> raise (InterpreterError ("right is expecting a mutable pair.", loc)))
-  | SetLeftExp (exp1, exp2, loc) ->
-     let Answer (mp_val, store1) = eval_exp exp1 env store in
-     let Answer (some_val, store2) = eval_exp exp2 env store1 in
-     (match mp_val with
-      | MutPairVal (l,r) -> set_ref l some_val store2; Answer (NumVal 23, store2)
-      | _ -> raise (InterpreterError ("setleft is expecting a mutable pair.", loc)))
-  | SetRightExp (exp1, exp2, loc) ->
-     let Answer (mp_val, store1) = eval_exp exp1 env store in
-     let Answer (some_val, store2) = eval_exp exp2 env store1 in
-     (match mp_val with
-      | MutPairVal (l,r) -> set_ref r some_val store2; Answer (NumVal 23, store2)
-      | _ -> raise (InterpreterError ("setright is expecting a mutable pair.", loc)))
-    
+  | NewArrayExp (exp_ls, loc) ->
+     let (exp_val_ls, store1) =
+       List.fold_left
+         (fun (ls, store) exp ->
+           let Answer (exp_val, store1) = eval_exp exp env store in
+           (ls @ [exp_val], store1))
+         ([], store)
+         exp_ls in
+     let (last_val_ref, final_store) =
+       List.fold_left
+         (fun (_, store) exp_val -> new_ref exp_val store)
+         (0, store1) exp_val_ls in 
+     let len = List.length exp_ls in 
+     Answer (MutArrayVal (((last_val_ref - len) + 1), len), final_store)
+  | ArrayRefExp (exp1, exp2, loc) ->
+     let Answer (ar_val, store1) = eval_exp exp1 env store in
+     let Answer (pos_val, store2) = eval_exp exp2 env store1 in
+     (match (ar_val, pos_val) with
+      | (MutArrayVal (first_pos, len), NumVal pos) ->
+         (if (pos >= 0) && ((first_pos + pos) < len)
+          then Answer (deref (first_pos+pos) store2, store2)
+          else raise (InterpreterError ("array ref out of bound." ,loc)))
+      | _ -> raise (InterpreterError ("arrayref is expecting an array and an integer.", loc)))
+  | ArraySetExp(exp1, exp2, exp3, loc) ->
+     let Answer (ar_val, store1) = eval_exp exp1 env store in
+     let Answer (pos_val, store2) = eval_exp exp2 env store1 in
+     let Answer (final_val, store3) = eval_exp exp3 env store2 in
+     (match (ar_val, pos_val) with
+      | (MutArrayVal (first_pos, len), NumVal pos) ->
+         (if (pos >=0) && ((first_pos + pos)<len)
+          then
+            (set_ref (first_pos+pos) final_val store3;
+             Answer(NumVal 23, store3))
+          else raise (InterpreterError ("array set out of bound." ,loc)))
+      | _ -> raise (InterpreterError ("arrayset is expecting an array and an integer.", loc)))
      
 let eval_top_level (ExpTop e) =
   eval_exp e (empty_env ()) (empty_store ()) |> string_of_expval |> print_endline
