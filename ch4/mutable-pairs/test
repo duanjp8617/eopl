@@ -60,4 +60,4 @@ let a = newarray(2,-(0,99)) in
 let p = proc (x)
           let v = arrayref(x,1) in
           arrayset(x,1,-(v,-(0,1))) in
-begin arrayset(a,1,2); (p a); (p a); (p a); (p a); arrayref(a,1) end;
+begin arrayset(a,1,0); (p a); (p a); (p a); (p a); arrayref(a,1) end;

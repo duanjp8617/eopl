@@ -90,10 +90,10 @@ let rec eval_exp exp env store =
       eval_exp exp2 new_env store2)
   | ProcExp (str, exp, loc) ->
      Answer (ProcVal (str, exp, (ref env)), store)
-  | ApplyExp (str, exp, loc) ->
-     (match deref (apply_env str env) store with
-      | ProcVal (arg_name, proc_body, proc_env_ref) ->
-         (let Answer (exp_val, store2) = eval_exp exp env store in
+  | ApplyExp (f_exp, exp, loc) ->
+     (match (eval_exp f_exp env store) with
+      | Answer (ProcVal (arg_name, proc_body, proc_env_ref), store1) ->
+         (let Answer (exp_val, store2) = eval_exp exp env store1 in
           let (ref_val, store3) = new_ref exp_val store2 in 
           let new_proc_env = extend_env arg_name ref_val !proc_env_ref in
           eval_exp proc_body new_proc_env store3)

@@ -12,7 +12,7 @@ and expression =
   | VarExp of string * Ploc.t
   | LetExp of string * expression * expression * Ploc.t
   | ProcExp of string * expression * Ploc.t
-  | ApplyExp of string * expression * Ploc.t
+  | ApplyExp of expression * expression * Ploc.t
   | ProcDefExp of string * string * expression * Ploc.t
   | LetRecExp of (expression list) * expression * Ploc.t
   | BeginEndExp of (expression list) * Ploc.t
