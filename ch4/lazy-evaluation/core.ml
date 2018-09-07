@@ -85,8 +85,7 @@ let rec eval_exp exp env (store:storval ref list) =
      (try Answer ((deref (apply_env str env) store), store)
       with MissInEnv err_msg -> raise (InterpreterError ("Can not find variable " ^ err_msg ^ " in environment", loc)))
   | LetExp (str, exp1, exp2, loc) ->
-     (let Answer (exp_val1, store1) = eval_exp exp1 env store in
-      let (ref_val, store2) = new_ref (ExpVal exp_val1) store1 in
+     (let (ref_val, store2) = new_ref (Thunk (exp1,env)) store in
       let new_env = extend_env str ref_val env in
       eval_exp exp2 new_env store2)
   | ProcExp (str, exp, loc) ->
