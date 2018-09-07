@@ -1,0 +1,6 @@
+let c = 1 in
+let a = newarray(2,-(0,99),3,4) in
+let p = proc (x)
+          let v = arrayref(x,1) in
+          arrayset(x,1,-(v,-(0,1))) in
+begin arrayset(a,1,0); (p a); (p a); (p a); (p a); arrayref(a,3) end;

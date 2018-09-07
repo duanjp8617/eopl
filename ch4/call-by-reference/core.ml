@@ -1,5 +1,5 @@
 open Syntax
-
+   
 type environment = (string * int) list
 
 and expval =
@@ -149,14 +149,15 @@ let rec eval_exp exp env store =
        List.fold_left
          (fun (_, store) exp_val -> new_ref exp_val store)
          (0, store1) exp_val_ls in 
-     let len = List.length exp_ls in 
+     let len = List.length exp_ls in
+     Printf.printf "%d, %d\n" ((last_val_ref - len)+1) len;
      Answer (MutArrayVal (((last_val_ref - len) + 1), len), final_store)
   | ArrayRefExp (exp1, exp2, loc) ->
      let Answer (ar_val, store1) = eval_exp exp1 env store in
      let Answer (pos_val, store2) = eval_exp exp2 env store1 in
      (match (ar_val, pos_val) with
       | (MutArrayVal (first_pos, len), NumVal pos) ->
-         (if (pos >= 0) && ((first_pos + pos) < len)
+         (if (pos >= 0) && (pos < len) 
           then Answer (deref (first_pos+pos) store2, store2)
           else raise (InterpreterError ("array ref out of bound." ,loc)))
       | _ -> raise (InterpreterError ("arrayref is expecting an array and an integer.", loc)))
@@ -166,7 +167,7 @@ let rec eval_exp exp env store =
      let Answer (final_val, store3) = eval_exp exp3 env store2 in
      (match (ar_val, pos_val) with
       | (MutArrayVal (first_pos, len), NumVal pos) ->
-         (if (pos >=0) && ((first_pos + pos)<len)
+         (if (pos >=0) && (pos < len)
           then
             (set_ref (first_pos+pos) final_val store3;
              Answer(NumVal 23, store3))
@@ -176,6 +177,16 @@ let rec eval_exp exp env store =
 and value_of_oprand oprand_exp env store =
   match oprand_exp with
   | VarExp(str, loc) -> ((apply_env str env), store)
+  | ArrayRefExp(exp1, exp2, loc) ->
+     let Answer(ar_val, store1) = eval_exp exp1 env store in
+     let Answer(pos_val, store2) = eval_exp exp2 env store1 in
+     (match (ar_val, pos_val) with
+      | (MutArrayVal (first_pos, len), NumVal pos) ->
+         
+         (if (pos >= 0) && (pos < len)
+          then ((first_pos+pos), store2)
+          else raise (InterpreterError ("array ref out of bound 1." ,loc)))
+      | _ -> raise (InterpreterError ("arrayref is expecting an array and an integer 1.", loc)))
   | _ ->
      let Answer(exp_val, store1) = eval_exp oprand_exp env store in
      new_ref exp_val store1

@@ -60,7 +60,7 @@ let a = newarray(2,-(0,99)) in
 let p = proc (x)
           let v = arrayref(x,1) in
           arrayset(x,1,-(v,-(0,1))) in
-begin arrayset(a,1,0); (p a); (p a); (p a); (p a); arrayref(a,1) end;
+begin arrayset(a,1,0); (p a); (p a); (p a); (p a); arrayref(a,0) end;
 
 let p = proc (x) set x = 4
       in let a = 3
@@ -89,3 +89,15 @@ in let p = proc (x) proc(y)
                    y
                   end
          in ((p b) b);
+
+
+let swap = proc (x) proc (y) let temp = x
+                  in begin
+                      set x = y;
+                      set y = temp
+                     end
+      in let a = newarray(2,13,17,20)
+            in begin
+                ((swap arrayref(a,0)) arrayref(a,3));
+               arrayref(a,0)
+               end;
