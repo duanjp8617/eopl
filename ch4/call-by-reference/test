@@ -61,3 +61,31 @@ let p = proc (x)
           let v = arrayref(x,1) in
           arrayset(x,1,-(v,-(0,1))) in
 begin arrayset(a,1,0); (p a); (p a); (p a); (p a); arrayref(a,1) end;
+
+let p = proc (x) set x = 4
+      in let a = 3
+         in begin (p a); a end;
+
+let f = proc (x) set x = 44 in let g = proc (y) (f y)
+         in let z = 55
+            in begin (g z); z end;
+
+let swap = proc (x) proc (y) let temp = x
+                  in begin
+                      set x = y;
+                      set y = temp
+                     end
+      in let a = 33
+         in let b = 44
+            in begin
+                ((swap a) b);
+-(a,b) end;
+
+
+let b = 3
+in let p = proc (x) proc(y)
+                  begin
+                   set x = 4;
+                   y
+                  end
+         in ((p b) b);

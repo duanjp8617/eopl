@@ -93,8 +93,7 @@ let rec eval_exp exp env store =
   | ApplyExp (f_exp, exp, loc) ->
      (match (eval_exp f_exp env store) with
       | Answer (ProcVal (arg_name, proc_body, proc_env_ref), store1) ->
-         (let Answer (exp_val, store2) = eval_exp exp env store1 in
-          let (ref_val, store3) = new_ref exp_val store2 in 
+         (let (ref_val, store3) = value_of_oprand exp env store1 in 
           let new_proc_env = extend_env arg_name ref_val !proc_env_ref in
           eval_exp proc_body new_proc_env store3)
       | _ -> raise (InterpreterError ("proc is not defined", loc)))
@@ -173,6 +172,14 @@ let rec eval_exp exp env store =
              Answer(NumVal 23, store3))
           else raise (InterpreterError ("array set out of bound." ,loc)))
       | _ -> raise (InterpreterError ("arrayset is expecting an array and an integer.", loc)))
+
+and value_of_oprand oprand_exp env store =
+  match oprand_exp with
+  | VarExp(str, loc) -> ((apply_env str env), store)
+  | _ ->
+     let Answer(exp_val, store1) = eval_exp oprand_exp env store in
+     new_ref exp_val store1
+
      
 let eval_top_level (ExpTop e) =
   eval_exp e (empty_env ()) (empty_store ()) |> string_of_expval |> print_endline
