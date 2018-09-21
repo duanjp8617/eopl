@@ -16,7 +16,9 @@ type continuation =
   | LetCont of string * expression * environment * continuation 
   | ApplyFstCont of expression * environment * continuation
   | ApplySndCont of expval * continuation 
-
+  | MultiLetFstCont of string * environment * (expression list) * expression * Ploc.t * continuation
+  | MultiLetSndCont of string * environment * expression * continuation
+                  
 let string_of_expval value =
   match value with
   | NumVal n -> string_of_int n
@@ -65,6 +67,24 @@ let rec eval_exp exp env cont =
       let new_env = List.append proc_list env in
       env_ref := new_env;
       eval_exp body new_env cont)
+  | LetDefExp (_,_,loc) -> raise (InterpreterError ("We don't evaluate LetDefExp", loc))
+  | MultiLetExp (ls, body, loc) ->
+     (match ls with
+      | [] -> raise (InterpreterError ("MultiLetExp expects non-empty expression list", loc))
+      | hd :: tl ->
+         (match tl with
+          | [] ->
+             (match hd with
+              | LetDefExp (str, exp, loc) ->
+                 eval_exp exp env (MultiLetSndCont (str, env, body, cont))
+              | _ -> raise (InterpreterError ("MultiLetExp expects LetDefExp", loc)))
+          | _ -> 
+             (match hd with
+              | LetDefExp (str, exp, loc) ->
+                 eval_exp exp env (MultiLetFstCont (str, env, tl, body, loc, cont))
+              | _ -> raise (InterpreterError ("MultiLetExp expects LetDefExp", loc)))))
+             
+     
      
                           
 and apply_cont cont exp_val =
@@ -93,7 +113,11 @@ and apply_cont cont exp_val =
       | ProcVal (str, body, p_env) ->
         eval_exp body (extend_env str exp_val !p_env) cont
       | _ -> raise (ApplyContError ("ApplyExp expects a procedure"))) 
-        
+  | MultiLetFstCont (str, env, tl, body, loc, cont) ->
+     eval_exp (MultiLetExp (tl, body, loc)) (extend_env str exp_val env) cont
+  | MultiLetSndCont (str, env, body, cont) ->
+     eval_exp body (extend_env str exp_val env) cont
+    
 let eval_top_level (ExpTop e) =
   eval_exp e (empty_env ()) EndCont |> string_of_expval |> print_endline
                                                      

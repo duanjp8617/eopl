@@ -15,6 +15,8 @@ and expression =
   | ApplyExp of expression * expression * Ploc.t
   | ProcDefExp of string * string * expression * Ploc.t
   | LetRecExp of (expression list) * expression * Ploc.t
+  | LetDefExp of string * expression * Ploc.t
+  | MultiLetExp of (expression list) * expression * Ploc.t
     
 let g = Grammar.gcreate (Plexer.gmake ())
 
@@ -22,6 +24,7 @@ let p = Grammar.Entry.create g "program"
 let t = Grammar.Entry.create g "top_level"
 let e = Grammar.Entry.create g "expression"
 let l = Grammar.Entry.create g "list"
+let letdef = Grammar.Entry.create g "letdef"
       
 let parse = Grammar.Entry.parse p
 
@@ -45,11 +48,16 @@ e : [
       | "("; exp1 = e; exp2 = e; ")" -> ApplyExp (exp1, exp2, loc)
       | "let"; var = LIDENT; "="; exp1 = e; "in"; exp2 = e -> LetExp (var, exp1, exp2, loc)
       | "letrec"; ls = LIST1 l; "in"; exp2 = e -> LetRecExp (ls, exp2, loc)
+      | "mlet"; ls = LIST1 letdef; "in"; exp = e -> MultiLetExp (ls, exp, loc)
       ]
 ];
 
 l : [
       [var1 = LIDENT; "("; var2 = LIDENT; ")"; "="; exp1 = e -> ProcDefExp (var1, var2, exp1, loc)]
+];
+
+letdef : [
+      [var = LIDENT; "="; exp=e -> LetDefExp (var, exp, loc)]
 ];
 
 END
