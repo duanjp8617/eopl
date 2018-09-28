@@ -24,14 +24,13 @@ let string_of_expval value =
   | NumVal n -> string_of_int n
   | BoolVal b -> string_of_bool b
   | ProcVal _ -> "proc"
-
-               
-               
+             
 let empty_env () = []
 
 let extend_env variable value env = (variable, value) :: env
                                   
 exception MissInEnv of string
+
                      
 let rec apply_env variable env =
   match env with
@@ -44,7 +43,7 @@ let rec apply_env variable env =
 
 exception InterpreterError of string * Ploc.t
 exception ApplyContError of string
-                          
+                            
 let rec eval_exp exp env cont =
   match exp with
   | ConstExp (num, loc) -> apply_cont cont (NumVal num)
