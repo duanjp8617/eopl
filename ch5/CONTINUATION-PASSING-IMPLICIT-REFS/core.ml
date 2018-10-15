@@ -30,7 +30,6 @@ let empty_env () = []
 let extend_env variable value env = (variable, value) :: env
                                   
 exception MissInEnv of string
-
                      
 let rec apply_env variable env =
   match env with
@@ -40,6 +39,12 @@ let rec apply_env variable env =
      else apply_env variable tl
   | [] ->
      raise (MissInEnv variable)
+
+let store = ref []
+
+let empty_store () = []          
+
+let newref                    
 
 exception InterpreterError of string * Ploc.t
 exception ApplyContError of string

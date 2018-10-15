@@ -17,7 +17,8 @@ and expression =
   | LetRecExp of (expression list) * expression * Ploc.t
   | LetDefExp of string * expression * Ploc.t
   | MultiLetExp of (expression list) * expression * Ploc.t
-    
+  | SetExp of string * expression * Ploc.t
+                 
 let g = Grammar.gcreate (Plexer.gmake ())
 
 let p = Grammar.Entry.create g "program"
@@ -49,6 +50,7 @@ e : [
       | "let"; var = LIDENT; "="; exp1 = e; "in"; exp2 = e -> LetExp (var, exp1, exp2, loc)
       | "letrec"; ls = LIST1 l; "in"; exp2 = e -> LetRecExp (ls, exp2, loc)
       | "mlet"; ls = LIST1 letdef; "in"; exp = e -> MultiLetExp (ls, exp, loc)
+      | "set"; var = LIDENT; "="; exp = e -> SetExp (var, exp, loc)
       ]
 ];
 
