@@ -15,7 +15,7 @@ let parse_output prog =
   ()
   
 let main () = 
-  try Stream.of_channel (open_in Sys.argv.(1)) |> parse |> value_of_program
+  try Stream.of_channel (open_in Sys.argv.(1)) |> parse |> parse_output
   with 
     Invalid_argument msg -> print_endline "Usage: prog filename"; exit 1
   | Sys_error msg -> print_endline msg; exit 1
