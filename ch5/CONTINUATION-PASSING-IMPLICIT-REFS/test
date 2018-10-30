@@ -22,9 +22,24 @@ in (double 6);
 letrec
 even(x) = if is_zero(x) then 1 else (odd -(x,1))
 odd(x) = if is_zero(x) then 0 else (even -(x,1))
-in (odd 12);
+in (odd 13);
 
 mlet x = 200
     y = 100
     z = 100 in
     -(z, -(x, y));
+
+let x = 100 in
+let y = set x=5112312 in
+x;
+
+let x = 200 in
+let f = proc(z) set z = 12343 in
+let y = (f x) in
+x;
+
+let x = 100 in
+begin
+  set x = 23;
+  x
+  end;

@@ -18,6 +18,7 @@ and expression =
   | LetDefExp of string * expression * Ploc.t
   | MultiLetExp of (expression list) * expression * Ploc.t
   | SetExp of string * expression * Ploc.t
-               
+  | BeginExp of (expression list) * Ploc.t
+            
 val parse : char Stream.t -> program
 
