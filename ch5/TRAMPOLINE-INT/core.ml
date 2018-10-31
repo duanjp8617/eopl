@@ -84,7 +84,7 @@ let rec eval_exp exp env cont =
                           
 and apply_cont cont exp_val =
   match cont with
-  | EndCont -> exp_val
+  | EndCont -> (ExpVal exp_val)
   | DiffFstCont (exp2, env, cont) -> eval_exp exp2 env (DiffSndCont (exp_val, cont))
   | DiffSndCont (exp_val1, cont) ->
      (match (exp_val1, exp_val) with
@@ -106,7 +106,7 @@ and apply_cont cont exp_val =
   | ApplySndCont (proc_val, cont) ->
      (match proc_val with
       | ProcVal (str, body, p_env) ->
-        eval_exp body (extend_env str exp_val !p_env) cont
+        Bounce (fun () -> eval_exp body (extend_env str exp_val !p_env) cont)
       | _ -> raise (ApplyContError ("ApplyExp expects a procedure"))) 
   | MultiLetFstCont (var_ls, exp_val_ls, env, tl, body, cont) ->
      (match tl with
@@ -114,8 +114,13 @@ and apply_cont cont exp_val =
          eval_exp exp env
            (MultiLetFstCont (var_ls @ [var], exp_val_ls @ [exp_val], env, let_def_tl, body, cont))
       | _ -> eval_exp body ((List.combine var_ls (exp_val_ls @ [exp_val])) @ env) cont)
+
+let rec tranpoline bounce_val =
+  match bounce_val with
+  | ExpVal value -> value
+  | Bounce func -> tranpoline (func ())
     
 let eval_top_level (ExpTop e) =
-  eval_exp e (empty_env ()) EndCont |> string_of_expval |> print_endline
+  tranpoline (eval_exp e (empty_env ()) EndCont) |> string_of_expval |> print_endline
                                                      
 let value_of_program (AProgram tl_list) = List.iter eval_top_level tl_list 
