@@ -9,14 +9,13 @@ and expression =
   | DiffExp of expression * expression * Ploc.t
   | IsZeroExp of expression * Ploc.t
   | IfExp of expression * expression * expression * Ploc.t
-  | VarExp of string * Ploc.t
-  | LetExp of string * expression * expression * Ploc.t
-  | ProcExp of string * expression * Ploc.t
+  | VarExp of int * Ploc.t
+  | LetExp of expression * expression * Ploc.t
+  | ProcExp of expression * Ploc.t
   | ApplyExp of expression * expression * Ploc.t
-  | ProcDefExp of string * string * expression * Ploc.t
   | LetRecExp of (expression list) * expression * Ploc.t
-  | LetDefExp of string * expression * Ploc.t
   | MultiLetExp of (expression list) * expression * Ploc.t
+
                
 val parse : char Stream.t -> program
 

@@ -1,4 +1,4 @@
-OBJS = syntax.cmo   main.cmo
+OBJS = syntax.cmo core.cmo main.cmo
 
 .PHONY: clean
 let : $(OBJS)
@@ -7,9 +7,9 @@ let : $(OBJS)
 
 syntax.cmi:
 syntax.cmo: syntax.cmi
-main.cmo: syntax.cmi #core.cmi
-#core.cmi: syntax.cmi
-#core.cmo: syntax.cmi core.cmi
+main.cmo: syntax.cmi core.cmi
+core.cmi: syntax.cmi
+core.cmo: syntax.cmi core.cmi
 
 %.cmi: %.mli
 	ocamlc -c -I `camlp5 -where` -pp 'camlp5o pa_extend.cmo' $<
