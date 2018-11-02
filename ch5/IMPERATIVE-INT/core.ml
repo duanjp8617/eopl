@@ -17,7 +17,11 @@ type continuation =
   | ApplyFstCont of expression * environment * continuation
   | ApplySndCont of expval * continuation 
   | MultiLetFstCont of (expval list) * environment * (expression list) * expression * continuation
-                  
+
+type bounce =
+  | ExpVal of expval
+  | Bounce of (unit -> bounce)
+                     
 let string_of_expval value =
   match value with
   | NumVal n -> string_of_int n
@@ -56,36 +60,36 @@ let rec eval_exp () =
   match !gexp with
   | ConstExp (num) ->
      gexp_val := (NumVal num);
-     apply_cont ()
+     Bounce apply_cont
   | VarExp (pos, loc) ->
      (match (apply_env pos !genv) with
       | None -> raise (MissInEnv loc)
       | Some exp_val ->
          gexp_val := exp_val;
-         apply_cont ())
+         Bounce apply_cont)
   | ProcExp (body, loc) ->
      gexp_val := (ProcVal (body, (ref !genv)));
-     apply_cont ()
+     Bounce apply_cont
   | DiffExp (exp1, exp2, loc) ->
      gexp := exp1;
      gcont := DiffFstCont (exp2, !genv, !gcont);
-     eval_exp ()
+     Bounce eval_exp
   | IsZeroExp (exp, loc) ->
      gexp := exp;
      gcont := (IsZeroCont !gcont);
-     eval_exp () 
+     Bounce eval_exp 
   | IfExp(exp1, exp2, exp3, loc) ->
      gexp := exp1;
      gcont := IfCont (exp2, exp3, !genv, !gcont);
-     eval_exp ()
+     Bounce eval_exp
   | LetExp (exp1, exp2, loc) ->
      gexp := exp1;
      gcont := LetCont (exp2, !genv, !gcont);
-     eval_exp ()
+     Bounce eval_exp
   | ApplyExp(exp1, exp2, loc) ->
      gexp := exp1;
      gcont := ApplyFstCont (exp2, !genv, !gcont);
-     eval_exp ()
+     Bounce eval_exp
   | LetRecExp(ls, body, loc) ->
      (let env_ref = ref [] in
       let proc_list = List.map (fun exp -> ProcVal (exp, env_ref)) ls in
@@ -93,30 +97,29 @@ let rec eval_exp () =
       env_ref := new_env;
       genv := new_env;
       gexp := body;
-      eval_exp ())
+      Bounce eval_exp)
   | MultiLetExp (ls, body, loc) ->
      (match ls with
       | exp :: tl ->
          gexp := exp;
          gcont := MultiLetFstCont ([], !genv, tl, body, !gcont);
-         eval_exp ()
+         Bounce eval_exp
       | _ -> raise (InterpreterError ("MultiLetExp expects non-empty expression list", loc)))
-     
-                          
+                               
 and apply_cont () =
   match !gcont with
-  | EndCont -> !gexp_val
+  | EndCont -> ExpVal !gexp_val
   | DiffFstCont (exp2, env, cont) ->
      gexp := exp2;
      genv := env;
      gcont := DiffSndCont (!gexp_val, cont);
-     eval_exp ()
+     Bounce eval_exp
   | DiffSndCont (exp_val1, cont) ->
      (match (exp_val1, !gexp_val) with
       | (NumVal num1, NumVal num2) ->
          gcont := cont;
          gexp_val := (NumVal (num1 - num2));
-         apply_cont();                      
+         Bounce apply_cont;                      
       | _ -> raise (ApplyContError ("DiffExp expects two integers")))
   | IsZeroCont cont ->
      (match !gexp_val with
@@ -125,11 +128,11 @@ and apply_cont () =
          then
            (gcont := cont;
             gexp_val := (BoolVal true);
-            apply_cont ())
+            Bounce apply_cont)
          else
            (gcont := cont;
             gexp_val := (BoolVal false);
-            apply_cont())
+            Bounce apply_cont)
       | _ -> raise (ApplyContError ("IsZeroExp expects an integer")))
   | IfCont (exp1, exp2, env, cont) ->
      (match !gexp_val with
@@ -139,30 +142,30 @@ and apply_cont () =
            (gexp := exp1;
             genv := env;
             gcont := cont;
-            eval_exp ())
+            Bounce eval_exp)
          else
            (gexp := exp2;
             genv := env;
             gcont := cont;
-            eval_exp ())
+            Bounce eval_exp)
       | _ -> raise (ApplyContError ("IfExp expects a boolean")))
   | LetCont (body, env, cont) ->
      gexp := body;
      genv := (!gexp_val :: env);
      gcont := cont;
-     eval_exp ()
+     Bounce eval_exp
   | ApplyFstCont (exp, env, cont) ->
      gexp := exp;
      genv := env;
      gcont := (ApplySndCont (!gexp_val, cont));
-     eval_exp()
+     Bounce eval_exp
   | ApplySndCont (proc_val, cont) ->
      (match proc_val with
       | ProcVal (body, p_env) ->
          gexp := body;
          genv := (!gexp_val :: !p_env);
          gcont := cont;
-         eval_exp ()
+         Bounce eval_exp
       | _ -> raise (ApplyContError ("ApplyExp expects a procedure"))) 
   | MultiLetFstCont (exp_val_ls, env, tl, body, cont) ->
      (match tl with
@@ -170,15 +173,20 @@ and apply_cont () =
          gexp := exp;
          genv := env;
          gcont := MultiLetFstCont (exp_val_ls @ [!gexp_val], env, let_def_tl, body, cont);
-         eval_exp ()
+         Bounce eval_exp
       | _ ->
          gexp := body;
          genv := (exp_val_ls @ [!gexp_val]) @ env;
          gcont := cont;
-         eval_exp ())
+         Bounce eval_exp)
 
+let rec tranpoline bval =
+  match bval with
+  | ExpVal value -> value
+  | Bounce bfunc -> tranpoline (bfunc())
+    
 let eval_top_level (ExpTop e) =
-  (gexp := e; genv := (empty_env ()); gcont := EndCont; eval_exp())
+  (gexp := e; genv := (empty_env ()); gcont := EndCont; (tranpoline (eval_exp())))
   |> string_of_expval |> print_endline
                                                      
 let value_of_program (AProgram tl_list) = List.iter eval_top_level tl_list 
