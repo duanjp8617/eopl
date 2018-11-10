@@ -15,6 +15,8 @@ and expression =
   | ApplyExp of expression * expression * Ploc.t
   | LetRecExp of (expression list) * expression * Ploc.t
   | MultiLetExp of (expression list) * expression * Ploc.t
+  | ExceptionExp of expression * expression
+  | RaiseExp of expression
 
                
 val parse : char Stream.t -> program

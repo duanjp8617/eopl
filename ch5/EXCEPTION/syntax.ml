@@ -72,6 +72,9 @@ e : [
             let var_ls = List.map (fun (LetDefExp(var, _, _)) -> var) ls in
             let exp_ls = List.map (fun (LetDefExp(_, exp, _)) -> (exp env)) ls in
             MultiLetExp (exp_ls, body (var_ls @ env), loc))
+      | "try"; exp = e; "catch"; "("; var = LIDENT; ")"; handler = e ->
+         (fun env -> ExceptionExp ((exp env), (handler (var :: env))))
+      | "raise"; exp = e -> (fun env -> RaiseExp (exp env))
       ]
 ];
 

@@ -19,7 +19,6 @@ type continuation =
   | MultiLetFstCont of (expval list) * environment * (expression list) * expression * continuation
   | ExceptionCont of expression * environment * continuation
   | RaiseCont of continuation
-  | 
                
 let string_of_expval value =
   match value with
@@ -115,18 +114,19 @@ and apply_cont cont exp_val =
   | RaiseCont cont ->
      apply_exception_cont cont exp_val
 
-let rec apply_exception_cont cont exp_val =
+and apply_exception_cont cont exp_val =
   match cont with
   | EndCont -> raise (ApplyContError "Uncaught exception")
   | DiffFstCont (_,_,cont) -> apply_exception_cont cont exp_val
-  | DiffSndCont (_,_,cont) -> apply_exception_cont cont exp_val
+  | DiffSndCont (_,cont) -> apply_exception_cont cont exp_val
   | IsZeroCont cont -> apply_exception_cont cont exp_val
   | IfCont (_,_,_,cont) -> apply_exception_cont cont exp_val
   | LetCont (_,_,cont) -> apply_exception_cont cont exp_val
   | ApplyFstCont (_,_,cont) -> apply_exception_cont cont exp_val
   | ApplySndCont (_,cont) -> apply_exception_cont cont exp_val
   | MultiLetFstCont (_,_,_,_,cont) -> apply_exception_cont cont exp_val
-  | ExceptionCont (handler, env, cont) -> eval_exp handler (exp_val :: env) 
+  | ExceptionCont (handler, env, cont) -> eval_exp handler (exp_val :: env) cont
+  | RaiseCont cont -> apply_exception_cont cont exp_val
     
 let eval_top_level (ExpTop e) =
   eval_exp e (empty_env ()) EndCont |> string_of_expval |> print_endline
