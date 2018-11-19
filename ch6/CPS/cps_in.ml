@@ -35,6 +35,14 @@ let rec cps_of_exp exp k_exp =
   | DiffExp (exp1, exp2) ->
      
 and cps_of_exp_list exp_l all_simple_builder =
-  let res = List.find_opt (fun exp -> is_exp_simple exp) exp_l in
-  match res with
-  | Some exp -> 
+  let rec helper remaining pred examined =
+    (match l with
+     | [] -> (List.rev examined, [])
+     | hd :: tl ->
+        (if pred hd
+         then helper tl pred (hd :: examined)
+         else (List.rev examined, l))) in
+  let (fst, snd) = helper exp_l (fun exp -> is_exp_simple exp) [] in
+  let var_name = gen_var () in
+  cps_of_exp (List.head snd) (SimpProcExp ([var_name], ) )
+  
