@@ -1,5 +1,3 @@
-open Syntax
-
 type simple_exp =
   | SimpConstExp of int
   | SimpVarExp of string
