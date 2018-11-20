@@ -1,5 +1,6 @@
 open Syntax
-(* open Core *)
+open Cps_in
+open Cps_out
    
 let string_of_loc loc =
   let fp = Ploc.first_pos loc in
@@ -15,7 +16,7 @@ let parse_output prog =
   ()
   
 let main () = 
-  try Stream.of_channel (open_in Sys.argv.(1)) |> parse |> parse_output
+  try Stream.of_channel (open_in Sys.argv.(1)) |> parse |> eval_program
   with 
     Invalid_argument msg -> print_endline "Usage: prog filename"; exit 1
   | Sys_error msg -> print_endline msg; exit 1

@@ -12,6 +12,42 @@ and cps_exp =
   | CpsApplyExp of simple_exp * (simple_exp list)
   | CpsLetRecExp of ((string * (string list) * cps_exp) list) * cps_exp
 
+let rec string_of_simple_exp exp =
+  match exp with
+  | SimpConstExp n -> "(SimpConstExp " ^ string_of_int n ^ ")"
+  | SimpVarExp var -> "(SimpVarExp " ^ var ^ ")"
+  | SimpProcExp (str_l, exp) ->
+     "(SimpProcExp ((" ^
+       (List.fold_left (fun a str -> a ^ "," ^ str) (List.hd str_l) (List.tl str_l)) ^
+         ")," ^
+           (string_of_cps_exp exp) ^ "))"
+  | SimpDiffExp (exp1, exp2) ->
+     "(SimpDiffExp(" ^ (string_of_simple_exp exp1) ^ "," ^ (string_of_simple_exp exp2) ^ "))"
+  | SimpIsZeroExp (exp) ->
+     "(SimpIsZeroExp(" ^ (string_of_simple_exp exp) ^ "))"
+  
+and string_of_cps_exp exp =
+  match exp with
+  | CpsSimpExp simple -> string_of_simple_exp simple
+  | CpsIfExp (simple, exp1, exp2) ->
+     "(CpsIfExp(" ^
+       string_of_simple_exp simple ^
+         "," ^
+           string_of_cps_exp exp1 ^ "," ^ string_of_cps_exp exp2 ^ "))"
+  | CpsLetExp (var, simple, exp) ->
+     "(CpsLetExp(" ^
+       var ^
+         "," ^
+           string_of_simple_exp simple ^
+             "," ^
+               string_of_cps_exp exp ^ "))"
+  | CpsApplyExp (proc, exp_l) ->
+     "(CpsApplyExp(" ^
+       string_of_simple_exp proc ^
+         (List.fold_left (fun a exp -> a ^ "," ^ string_of_simple_exp exp) "" exp_l) ^
+           "))"
+  | CpsLetRecExp (l, body) -> "LetRecNotImplemented"
+                  
 type environment = (string * exp_val) list 
                   
 and exp_val =
@@ -43,10 +79,14 @@ let value_of_simple_exp simple env =
       | (SimpConstExp n1, SimpVarExp var) ->
          (match apply_env var env with
           | NumVal n2 -> NumVal (n1 - n2)
-          | _ -> raise (InvalidSimpExp "SimpDiffExp"))
+          | _ -> raise (InvalidSimpExp "SimpDiffExp n v"))
       | (SimpVarExp var, SimpConstExp n2) ->
          (match apply_env var env with
           | NumVal n1 -> NumVal (n1 - n2)
+          | _ -> raise (InvalidSimpExp "SimpDiffExp v n"))
+      | (SimpVarExp v1, SimpVarExp v2) ->
+         (match (apply_env v1 env, apply_env v2 env) with
+          | NumVal n1, NumVal n2 -> NumVal (n1 - n2)
           | _ -> raise (InvalidSimpExp "SimpDiffExp"))
       | _ -> raise (InvalidSimpExp "SimpDiffExp"))
   | SimpIsZeroExp exp ->
@@ -59,8 +99,8 @@ let value_of_simple_exp simple env =
           | _ -> raise (InvalidSimpExp "SimpIsZeroExp"))
       | _ -> raise (InvalidSimpExp "SimpIsZeroExp"))
 
-exception InvalidCpsExp of string     
-     
+exception InvalidCpsExp of string                                           
+                         
 let rec value_of_cps_exp exp env =
   match exp with
   | CpsSimpExp simple -> value_of_simple_exp simple env
@@ -89,7 +129,14 @@ let rec value_of_cps_exp exp env =
      empty_env := proc_env;
      value_of_cps_exp body proc_env
                    
-     
-       
+let string_of_expval exp_val =
+  match exp_val with
+  | NumVal n -> string_of_int n
+  | BoolVal b -> string_of_bool b
+  | ProcVal _ -> "proc"
+
+let eval_cps_exp exp =
+  (* value_of_cps_exp exp [] |> string_of_expval |> print_endline *)
+  string_of_cps_exp exp |> print_endline     
       
      

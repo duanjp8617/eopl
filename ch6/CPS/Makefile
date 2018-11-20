@@ -1,4 +1,4 @@
-OBJS = syntax.cmo cps_out.cmo   main.cmo
+OBJS = syntax.cmo cps_out.cmo cps_in.cmo main.cmo
 
 .PHONY: clean
 let : $(OBJS)
@@ -9,7 +9,9 @@ syntax.cmi:
 syntax.cmo: syntax.cmi
 cps_out.cmi:
 cps_out.cmo: cps_out.cmi
-main.cmo: syntax.cmi #core.cmi
+cps_in.cmi: syntax.cmi cps_out.cmi
+cps_in.cmo: cps_in.cmi syntax.cmi cps_out.cmi
+main.cmo: syntax.cmi cps_in.cmi cps_out.cmi
 #core.cmi: syntax.cmi
 #core.cmo: syntax.cmi core.cmi
 

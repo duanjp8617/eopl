@@ -11,3 +11,9 @@ and cps_exp =
   | CpsLetExp of string * simple_exp * cps_exp
   | CpsApplyExp of simple_exp * (simple_exp list)
   | CpsLetRecExp of ((string * (string list) * cps_exp) list) * cps_exp
+
+exception MissInEnv of string
+exception InvalidSimpExp of string
+exception InvalidCpsExp of string
+
+val eval_cps_exp : cps_exp -> unit
